@@ -1,0 +1,38 @@
+# Built application files
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Gradle & Build artifacts
+.gradle/
+build/
+/build
+**/build/
+.kotlin/
+
+# Local configuration & environment
+local.properties
+.env
+.env.*.local
+.env.local
+
+# Signing keys & keystores
+*.keystore
+*.jks
+*.p12
+*.pem
+keystore.properties
+
+# IDE & Editor files
+.idea/
+*.iml
+.externalNativeBuild
+.cxx
+/captures
+
+# System files & Logs
+.DS_Store
+Thumbs.db
+*.log

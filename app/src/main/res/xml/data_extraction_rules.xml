@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  allowBackup is already false in the manifest, which disables Auto Backup
+  entirely. This file is kept as an explicit, documented belt-and-suspenders
+  rule set in case allowBackup is ever flipped back on for some other reason -
+  the encrypted device-token prefs file must never leave the device via backup
+  or the Android device-to-device transfer tool, since restoring it onto a
+  different physical device would let that device impersonate the paired one.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="secure_prefs.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="secure_prefs.xml" />
+    </device-transfer>
+</data-extraction-rules>
