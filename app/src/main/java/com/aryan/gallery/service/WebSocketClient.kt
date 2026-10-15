@@ -50,7 +50,8 @@ class WebSocketClient @Inject constructor(
     private var webSocket: WebSocket? = null
 
     @Volatile
-    private var isConnected = false
+    var isConnected = false
+        private set
     @Volatile
     private var isManualDisconnect = false
     private var backoffDelayMs = webSocketConfig.initialBackoffMs

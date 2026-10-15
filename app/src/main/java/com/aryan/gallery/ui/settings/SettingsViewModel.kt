@@ -25,9 +25,6 @@ class SettingsViewModel @Inject constructor(
     private val _deviceId = MutableStateFlow(tokenStore.getDeviceId())
     val deviceId: StateFlow<String?> = _deviceId.asStateFlow()
 
-    private val _isRemoteAccessEnabled = MutableStateFlow(remoteAccessPreferences.isRemoteAccessEnabled)
-    val isRemoteAccessEnabled: StateFlow<Boolean> = _isRemoteAccessEnabled.asStateFlow()
-
     private val _serverHost = MutableStateFlow(remoteAccessPreferences.serverBaseUrl)
     val serverHost: StateFlow<String> = _serverHost.asStateFlow()
 
@@ -45,21 +42,12 @@ class SettingsViewModel @Inject constructor(
     fun refreshState() {
         _isPaired.value = tokenStore.isPaired()
         _deviceId.value = tokenStore.getDeviceId()
-        _isRemoteAccessEnabled.value = remoteAccessPreferences.isRemoteAccessEnabled
         _serverHost.value = remoteAccessPreferences.serverBaseUrl
     }
 
     fun updateServerHost(newHost: String) {
         _serverHost.value = newHost
         remoteAccessPreferences.serverBaseUrl = newHost
-    }
-
-    fun setRemoteAccessEnabled(enabled: Boolean) {
-        remoteAccessPreferences.isRemoteAccessEnabled = enabled
-        _isRemoteAccessEnabled.value = enabled
-        if (enabled && !remoteAccessPreferences.hasHandledBatteryOptimizationPrompt) {
-            _showBatteryOptimizationDialog.value = true
-        }
     }
 
     fun dismissBatteryOptimizationDialog() {

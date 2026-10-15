@@ -12,7 +12,8 @@ import javax.inject.Singleton
 @Singleton
 class MediaRepository @Inject constructor(
     private val dataSource: MediaStoreDataSource,
-    private val mediaConfig: MediaConfig
+    private val mediaConfig: MediaConfig,
+    private val mediaStoreObserver: MediaStoreObserver
 ) {
 
     /**
@@ -28,7 +29,7 @@ class MediaRepository @Inject constructor(
                 enablePlaceholders = false
             )
         ) {
-            MediaPagingSource(dataSource, bucketId)
+            MediaPagingSource(dataSource, mediaStoreObserver, bucketId)
         }.flow
     }
 

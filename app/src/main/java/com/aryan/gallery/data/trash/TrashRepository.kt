@@ -22,6 +22,11 @@ class TrashRepository @Inject constructor(
 ) {
 
     val trashItemsFlow: Flow<List<TrashEntity>> = trashDao.getAllTrashItems()
+    val trashedMediaIdsFlow: Flow<List<Long>> = trashDao.getTrashedMediaIdsFlow()
+
+    suspend fun getTrashedMediaIds(): List<Long> {
+        return trashDao.getTrashedMediaIds()
+    }
 
     suspend fun getExpiredTrashItems(): List<TrashEntity> {
         return trashDao.getExpiredTrashItems()

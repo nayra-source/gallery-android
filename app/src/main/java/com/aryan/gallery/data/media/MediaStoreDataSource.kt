@@ -7,6 +7,7 @@ import android.database.Cursor
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import com.aryan.gallery.data.trash.TrashDao
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,10 +16,13 @@ import javax.inject.Singleton
 
 /**
  * Data source for querying local media (photos and videos) from MediaStore via ContentResolver.
+ * Automatically excludes trashed items and applies display name overrides from local Room DB.
  */
 @Singleton
 class MediaStoreDataSource @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val trashDao: TrashDao,
+    private val mediaOverrideDao: MediaOverrideDao
 ) {
 
     private val projection = arrayOf(
@@ -50,6 +54,8 @@ class MediaStoreDataSource @Inject constructor(
         offset: Int,
         bucketId: String? = null
     ): List<MediaItem> = withContext(Dispatchers.IO) {
+        val trashedIds = trashDao.getTrashedMediaIds().toSet()
+        val nameOverrides = mediaOverrideDao.getAllOverrides().associateBy { it.mediaId }
         val mediaItems = mutableListOf<MediaItem>()
         val collection = MediaStore.Files.getContentUri("external")
 
@@ -103,7 +109,10 @@ class MediaStoreDataSource @Inject constructor(
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                val displayName = cursor.getString(displayNameColumn) ?: ""
+                if (trashedIds.contains(id)) continue
+
+                val rawDisplayName = cursor.getString(displayNameColumn) ?: ""
+                val displayName = nameOverrides[id]?.customDisplayName ?: rawDisplayName
                 val dateTaken = cursor.getLong(dateTakenColumn)
                 val dateAdded = cursor.getLong(dateAddedColumn)
                 val mimeType = cursor.getString(mimeTypeColumn) ?: ""
@@ -154,6 +163,11 @@ class MediaStoreDataSource @Inject constructor(
      */
     suspend fun getMediaItemById(mediaId: Long): MediaItem? = withContext(Dispatchers.IO) {
         try {
+            val trashedIds = trashDao.getTrashedMediaIds().toSet()
+            if (trashedIds.contains(mediaId)) return@withContext null
+
+            val override = mediaOverrideDao.getOverride(mediaId)
+
             val collection = MediaStore.Files.getContentUri("external")
             val selection = "${MediaStore.Files.FileColumns._ID} = ?"
             val selectionArgs = arrayOf(mediaId.toString())
@@ -180,7 +194,8 @@ class MediaStoreDataSource @Inject constructor(
                     val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.VideoColumns.DURATION)
 
                     val id = cursor.getLong(idColumn)
-                    val displayName = cursor.getString(displayNameColumn) ?: ""
+                    val rawDisplayName = cursor.getString(displayNameColumn) ?: ""
+                    val displayName = override?.customDisplayName ?: rawDisplayName
                     val dateTaken = cursor.getLong(dateTakenColumn)
                     val dateAdded = cursor.getLong(dateAddedColumn)
                     val mimeType = cursor.getString(mimeTypeColumn) ?: ""
@@ -234,6 +249,7 @@ class MediaStoreDataSource @Inject constructor(
      * The first item seen per bucket becomes the cover photo (newest item), and item counts are accumulated.
      */
     suspend fun getAlbums(): List<Album> = withContext(Dispatchers.IO) {
+        val trashedIds = trashDao.getTrashedMediaIds().toSet()
         val albumMap = LinkedHashMap<String, AlbumData>()
         val collection = MediaStore.Files.getContentUri("external")
 
@@ -264,6 +280,7 @@ class MediaStoreDataSource @Inject constructor(
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
+                if (trashedIds.contains(id)) continue
                 val bucketId = cursor.getString(bucketIdColumn) ?: continue
                 val bucketName = cursor.getString(bucketDisplayNameColumn) ?: "Uncategorized"
                 val rawType = cursor.getInt(mediaTypeColumn)

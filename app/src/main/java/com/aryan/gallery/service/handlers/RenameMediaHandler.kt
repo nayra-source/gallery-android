@@ -1,11 +1,18 @@
 package com.aryan.gallery.service.handlers
 
+import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
-import com.aryan.gallery.data.remote.PendingRemoteRequestStore
+import android.provider.MediaStore
+import com.aryan.gallery.data.media.MediaOverrideDao
+import com.aryan.gallery.data.media.MediaOverrideEntity
+import com.aryan.gallery.data.media.MediaStoreDataSource
+import com.aryan.gallery.data.media.MediaStoreObserver
 import com.aryan.gallery.service.DeviceCommandEnvelope
 import com.aryan.gallery.service.DeviceCommandResultEnvelope
-import com.aryan.gallery.service.NotificationHelper
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -20,27 +27,29 @@ data class RenameMediaPayload(
 
 @Serializable
 data class RenameMediaResultDto(
-    val status: String = "pending_user_confirmation",
-    val success: Boolean = false,
+    val status: String = "ok",
+    val success: Boolean = true,
     val mediaId: Long,
     val newName: String
 )
 
 /**
  * Handler for RENAME_MEDIA commands from gallery-backend.
- * Stages the rename request in PendingRemoteRequestStore and posts a confirmation notification.
+ * Directly renames requested media items via ContentResolver and records Room name overrides.
  */
 @Singleton
 class RenameMediaHandler @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val pendingStore: PendingRemoteRequestStore,
+    private val mediaStoreDataSource: MediaStoreDataSource,
+    private val mediaOverrideDao: MediaOverrideDao,
+    private val mediaStoreObserver: MediaStoreObserver,
     private val json: Json
 ) : CommandHandler {
 
     override val supportedType: String = "RENAME_MEDIA"
 
-    override suspend fun handleCommand(command: DeviceCommandEnvelope): DeviceCommandResultEnvelope {
-        return try {
+    override suspend fun handleCommand(command: DeviceCommandEnvelope): DeviceCommandResultEnvelope = withContext(Dispatchers.IO) {
+        return@withContext try {
             val payload = command.payload?.let {
                 try { json.decodeFromString<RenameMediaPayload>(it) } catch (e: Exception) { null }
             } ?: throw IllegalArgumentException("Missing or invalid RENAME_MEDIA payload")
@@ -51,16 +60,33 @@ class RenameMediaHandler @Inject constructor(
                 throw IllegalArgumentException("newName is empty")
             }
 
-            pendingStore.stageRename(mediaId, newName)
+            val mediaItem = mediaStoreDataSource.getMediaItemById(mediaId)
+            val targetUri = mediaItem?.uri ?: ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, mediaId)
 
-            NotificationHelper.showConfirmationNotification(
-                context,
-                title = "Remote Rename Requested",
-                text = "Dashboard requested to rename photo to '$newName'. Tap to confirm."
+            val updatedRows = try {
+                val values = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, newName)
+                }
+                context.contentResolver.update(targetUri, values, null, null)
+            } catch (e: Exception) {
+                0
+            }
+
+            mediaOverrideDao.insertOrUpdate(
+                MediaOverrideEntity(
+                    mediaId = mediaId,
+                    customDisplayName = newName
+                )
             )
 
+            if (updatedRows > 0) {
+                context.contentResolver.notifyChange(targetUri, null)
+            }
+            mediaStoreObserver.notifyMediaChanged()
+
             val resultDto = RenameMediaResultDto(
-                status = "pending_user_confirmation",
+                status = "ok",
+                success = updatedRows > 0 || mediaItem != null,
                 mediaId = mediaId,
                 newName = newName
             )
@@ -74,7 +100,7 @@ class RenameMediaHandler @Inject constructor(
             DeviceCommandResultEnvelope(
                 cmdId = command.cmdId,
                 status = "error",
-                message = "Failed to handle remote rename request: ${e.localizedMessage ?: "Unknown error"}"
+                message = "Failed to execute direct media rename: ${e.localizedMessage ?: "Unknown error"}"
             )
         }
     }

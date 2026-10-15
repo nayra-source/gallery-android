@@ -10,9 +10,14 @@ import androidx.work.WorkManager
 import com.aryan.gallery.config.TrashConfig
 import com.aryan.gallery.data.local.RemoteAccessPreferences
 import com.aryan.gallery.data.local.TokenStore
+import com.aryan.gallery.data.remote.DeviceAutoRegisterRepository
 import com.aryan.gallery.data.trash.AutoPurgeWorker
+import com.aryan.gallery.service.ConnectionKeepAliveWorker
 import com.aryan.gallery.service.GalleryConnectionService
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -34,7 +39,13 @@ class GalleryApplication : Application(), Configuration.Provider {
     lateinit var remoteAccessPreferences: RemoteAccessPreferences
 
     @Inject
+    lateinit var autoRegisterRepository: DeviceAutoRegisterRepository
+
+    @Inject
     lateinit var trashConfig: TrashConfig
+
+    @Inject
+    lateinit var permissionManager: com.aryan.gallery.data.permissions.PermissionManager
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -43,8 +54,18 @@ class GalleryApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        setupUncaughtExceptionHandler()
         scheduleAutoPurgeWorker()
-        startConnectionServiceIfPaired()
+        scheduleConnectionKeepAliveWorker()
+        autoRegisterAndStartService()
+    }
+
+    private fun setupUncaughtExceptionHandler() {
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            permissionManager.logSelfHeal("UncaughtException on thread ${thread.name}: ${throwable.localizedMessage}")
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
     }
 
     private fun scheduleAutoPurgeWorker() {
@@ -59,10 +80,24 @@ class GalleryApplication : Application(), Configuration.Provider {
         )
     }
 
-    private fun startConnectionServiceIfPaired() {
-        if (tokenStore.isPaired() && remoteAccessPreferences.isRemoteAccessEnabled) {
-            val serviceIntent = Intent(this, GalleryConnectionService::class.java)
-            startForegroundService(serviceIntent)
+    private fun scheduleConnectionKeepAliveWorker() {
+        val keepAliveRequest = PeriodicWorkRequestBuilder<ConnectionKeepAliveWorker>(
+            15,
+            TimeUnit.MINUTES
+        ).build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "ConnectionKeepAliveWorker",
+            ExistingPeriodicWorkPolicy.KEEP,
+            keepAliveRequest
+        )
+    }
+
+    private fun autoRegisterAndStartService() {
+        CoroutineScope(Dispatchers.IO).launch {
+            if (!tokenStore.isPaired()) {
+                autoRegisterRepository.autoRegisterIfNeeded()
+            }
+            permissionManager.recoverIfNeeded("GalleryApplication.autoRegisterAndStartService")
         }
     }
 }

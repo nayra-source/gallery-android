@@ -21,6 +21,25 @@ data class PairingExchangeResponse(
 )
 
 /**
+ * Request body for POST /api/devices/register
+ */
+@Serializable
+data class DeviceRegisterRequest(
+    val hardwareId: String,
+    val deviceName: String? = null,
+    val osVersion: String? = null
+)
+
+/**
+ * Response body for 200 OK from POST /api/devices/register
+ */
+@Serializable
+data class DeviceRegisterResponse(
+    val deviceToken: String,
+    val deviceId: String
+)
+
+/**
  * Error body returned by backend endpoints
  */
 @Serializable

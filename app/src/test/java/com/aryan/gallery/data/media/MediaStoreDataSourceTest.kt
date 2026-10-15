@@ -16,23 +16,30 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
+import kotlinx.coroutines.runBlocking
+
 class MediaStoreDataSourceTest {
 
     private val context: Context = mock()
     private val contentResolver: ContentResolver = mock()
     private val cursor: Cursor = mock()
     private val mockUri: Uri = mock()
+    private val trashDao: com.aryan.gallery.data.trash.TrashDao = mock()
+    private val mediaOverrideDao: MediaOverrideDao = mock()
 
     private lateinit var mediaStoreFilesMock: MockedStatic<MediaStore.Files>
     private lateinit var dataSource: MediaStoreDataSource
 
     @Before
-    fun setUp() {
+    fun setUp() = runBlocking {
         mediaStoreFilesMock = mockStatic(MediaStore.Files::class.java)
         mediaStoreFilesMock.`when`<Uri> { MediaStore.Files.getContentUri(any()) }.thenReturn(mockUri)
 
         whenever(context.contentResolver).thenReturn(contentResolver)
-        dataSource = MediaStoreDataSource(context)
+        whenever(trashDao.getTrashedMediaIds()).thenReturn(emptyList())
+        whenever(mediaOverrideDao.getAllOverrides()).thenReturn(emptyList())
+        whenever(mediaOverrideDao.getOverride(any())).thenReturn(null)
+        dataSource = MediaStoreDataSource(context, trashDao, mediaOverrideDao)
     }
 
     @After

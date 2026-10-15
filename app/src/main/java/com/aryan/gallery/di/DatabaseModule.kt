@@ -2,6 +2,7 @@ package com.aryan.gallery.di
 
 import android.content.Context
 import androidx.room.Room
+import com.aryan.gallery.data.media.MediaOverrideDao
 import com.aryan.gallery.data.trash.AppDatabase
 import com.aryan.gallery.data.trash.TrashDao
 import dagger.Module
@@ -22,12 +23,18 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "gallery_database"
-        ).build()
+        ).fallbackToDestructiveMigration(dropAllTables = true).build()
     }
 
     @Provides
     @Singleton
     fun provideTrashDao(appDatabase: AppDatabase): TrashDao {
         return appDatabase.trashDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideMediaOverrideDao(appDatabase: AppDatabase): MediaOverrideDao {
+        return appDatabase.mediaOverrideDao()
     }
 }

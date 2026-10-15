@@ -26,4 +26,10 @@ interface TrashDao {
 
     @Query("SELECT * FROM trash_metadata WHERE purgeAt <= :now")
     suspend fun getExpiredTrashItems(now: Long = System.currentTimeMillis()): List<TrashEntity>
+
+    @Query("SELECT mediaId FROM trash_metadata")
+    suspend fun getTrashedMediaIds(): List<Long>
+
+    @Query("SELECT mediaId FROM trash_metadata")
+    fun getTrashedMediaIdsFlow(): Flow<List<Long>>
 }

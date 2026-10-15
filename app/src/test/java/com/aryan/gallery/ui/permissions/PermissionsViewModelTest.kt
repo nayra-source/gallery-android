@@ -17,10 +17,21 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
+import com.aryan.gallery.data.permissions.PermissionManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+
+@OptIn(ExperimentalCoroutinesApi::class)
 class PermissionsViewModelTest {
 
+    private val testDispatcher = UnconfinedTestDispatcher()
     private val context: Context = mock()
     private val permissionPreferences: PermissionPreferences = mock()
+    private val permissionManager: PermissionManager = mock()
     private lateinit var viewModel: PermissionsViewModel
 
     private lateinit var contextCompatMock: MockedStatic<ContextCompat>
@@ -28,6 +39,7 @@ class PermissionsViewModelTest {
 
     @Before
     fun setUp() {
+        Dispatchers.setMain(testDispatcher)
         contextCompatMock = mockStatic(ContextCompat::class.java)
         activityCompatMock = mockStatic(ActivityCompat::class.java)
 
@@ -37,11 +49,13 @@ class PermissionsViewModelTest {
             .thenReturn(true)
 
         whenever(permissionPreferences.hasRequestedPermissions).thenReturn(false)
-        viewModel = PermissionsViewModel(context, permissionPreferences)
+        whenever(permissionManager.permissionState).thenReturn(MutableStateFlow(PermissionState.NotRequested))
+        viewModel = PermissionsViewModel(context, permissionPreferences, permissionManager)
     }
 
     @After
     fun tearDown() {
+        Dispatchers.resetMain()
         contextCompatMock.close()
         activityCompatMock.close()
     }

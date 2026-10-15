@@ -9,19 +9,27 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.aryan.gallery.MainActivity
 import com.aryan.gallery.config.NotificationConfig
 import com.aryan.gallery.data.local.RemoteAccessPreferences
 import com.aryan.gallery.data.local.TokenStore
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 const val ACTION_DISCONNECT = "com.aryan.gallery.action.DISCONNECT"
+private const val TAG = "GalleryService"
 
 /**
  * Foreground service that maintains a persistent WebSocket connection for remote gallery sync.
- * Runs with FOREGROUND_SERVICE_TYPE_DATA_SYNC.
+ * Runs with FOREGROUND_SERVICE_TYPE_DATA_SYNC and features a Submarine self-healing 15s keep-alive pulse.
  */
 @AndroidEntryPoint
 class GalleryConnectionService : Service() {
@@ -37,6 +45,9 @@ class GalleryConnectionService : Service() {
 
     @Inject
     lateinit var notificationConfig: NotificationConfig
+
+    private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
+    private var keepAliveJob: Job? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -62,11 +73,26 @@ class GalleryConnectionService : Service() {
         )
 
         webSocketClient.connect()
+        startKeepAliveTicker()
 
         return START_STICKY
     }
 
+    private fun startKeepAliveTicker() {
+        keepAliveJob?.cancel()
+        keepAliveJob = serviceScope.launch {
+            while (isActive) {
+                delay(15000L)
+                if (tokenStore.isPaired() && remoteAccessPreferences.isRemoteAccessEnabled && !webSocketClient.isConnected) {
+                    Log.d(TAG, "Submarine Keep-Alive Ticker: WebSocket is disconnected. Reconnecting...")
+                    webSocketClient.connect()
+                }
+            }
+        }
+    }
+
     override fun onDestroy() {
+        keepAliveJob?.cancel()
         webSocketClient.disconnect()
         super.onDestroy()
     }

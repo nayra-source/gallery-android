@@ -3,11 +3,14 @@ package com.aryan.gallery.ui.permissions
 import android.app.Activity
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.aryan.gallery.data.permissions.PermissionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -16,11 +19,11 @@ import javax.inject.Inject
 @HiltViewModel
 class PermissionsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val permissionPreferences: PermissionPreferences
+    private val permissionPreferences: PermissionPreferences,
+    private val permissionManager: PermissionManager
 ) : ViewModel() {
 
-    private val _permissionState = MutableStateFlow<PermissionState>(PermissionState.NotRequested)
-    val permissionState: StateFlow<PermissionState> = _permissionState.asStateFlow()
+    val permissionState: StateFlow<PermissionState> = permissionManager.permissionState
 
     private val _isPartialAccessBannerVisible = MutableStateFlow(true)
     val isPartialAccessBannerVisible: StateFlow<Boolean> = _isPartialAccessBannerVisible.asStateFlow()
@@ -31,12 +34,15 @@ class PermissionsViewModel @Inject constructor(
             activity = activity,
             hasRequested = permissionPreferences.hasRequestedPermissions
         )
-        _permissionState.value = state
+        permissionManager.updatePermissionState()
     }
 
     fun onPermissionResult(activity: Activity?) {
         permissionPreferences.hasRequestedPermissions = true
         updatePermissionState(activity)
+        viewModelScope.launch {
+            permissionManager.recoverIfNeeded("PermissionGrantResult")
+        }
     }
 
     fun dismissPartialAccessBanner() {

@@ -36,7 +36,6 @@ import androidx.navigation.navArgument
 import com.aryan.gallery.ui.album.AlbumDetailScreen
 import com.aryan.gallery.ui.album.AlbumGridScreen
 import com.aryan.gallery.ui.gallery.GalleryScreen
-import com.aryan.gallery.ui.pairing.PairingScreen
 import com.aryan.gallery.ui.settings.SettingsScreen
 import com.aryan.gallery.ui.trash.TrashScreen
 import com.aryan.gallery.ui.viewer.MediaViewerScreen
@@ -46,7 +45,6 @@ sealed class NavRoute(val route: String) {
     data object Albums : NavRoute("albums")
     data object Trash : NavRoute("trash")
     data object Settings : NavRoute("settings")
-    data object Pairing : NavRoute("pairing")
 
     data object AlbumDetail : NavRoute("album_detail/{bucketId}/{bucketName}") {
         fun createRoute(bucketId: String, bucketName: String): String =
@@ -239,18 +237,7 @@ fun GalleryNavigation() {
             }
 
             composable(NavRoute.Settings.route) {
-                SettingsScreen(
-                    onNavigateToPairing = {
-                        navController.navigate(NavRoute.Pairing.route)
-                    }
-                )
-            }
-
-            composable(NavRoute.Pairing.route) {
-                PairingScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onPairingSuccess = { navController.popBackStack() }
-                )
+                SettingsScreen()
             }
 
             composable(

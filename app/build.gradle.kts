@@ -33,8 +33,8 @@ android {
             localProperties.load(stream)
         }
     }
-    val devBaseUrl = localProperties.getProperty("DEV_BASE_URL") ?: System.getenv("DEV_BASE_URL") ?: "http://10.0.2.2:8080"
-    val devWsUrl = localProperties.getProperty("DEV_WS_URL") ?: System.getenv("DEV_WS_URL") ?: "ws://10.0.2.2:8080/ws/device"
+    val devBaseUrl = localProperties.getProperty("DEV_BASE_URL") ?: System.getenv("DEV_BASE_URL") ?: "http://10.149.22.249:8080"
+    val devWsUrl = localProperties.getProperty("DEV_WS_URL") ?: System.getenv("DEV_WS_URL") ?: "ws://10.149.22.249:8080/ws/device"
 
     flavorDimensions += "environment"
     productFlavors {
