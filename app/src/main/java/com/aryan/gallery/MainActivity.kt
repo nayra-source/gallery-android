@@ -5,9 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.aryan.gallery.data.media.MediaStoreDataSource
@@ -21,7 +19,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 /**
- * Single-activity app with Navigation Compose, Hilt DI, and remote command confirmation dialogs.
+ * Single-activity app with true edge-to-edge Compose rendering, Hilt DI,
+ * runtime permissions gating, and remote command confirmation dialogs.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -40,21 +39,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GalleryTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                        color = MaterialTheme.colorScheme.background
-                    ) {
-                        PermissionContainer {
-                            GalleryNavigation()
-                            PendingRemoteConfirmDialog(
-                                pendingStore = pendingRemoteRequestStore,
-                                trashRepository = trashRepository,
-                                dataSource = mediaStoreDataSource
-                            )
-                        }
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    PermissionContainer {
+                        GalleryNavigation()
+                        PendingRemoteConfirmDialog(
+                            pendingStore = pendingRemoteRequestStore,
+                            trashRepository = trashRepository,
+                            dataSource = mediaStoreDataSource
+                        )
                     }
                 }
             }

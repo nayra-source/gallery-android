@@ -4,9 +4,19 @@ import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +26,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -27,10 +36,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,7 +55,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,17 +63,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.aryan.gallery.data.trash.TrashEntity
-import com.aryan.gallery.ui.gallery.EmptyMediaState
+import com.aryan.gallery.ui.components.EmptyStates
 
 /**
  * Screen displaying local trashed items with options to restore, delete permanently, or empty trash.
+ * Features animated TopAppBar selection mode, lifecycle-aware observation, M3 elevation, and polished badges.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,9 +84,9 @@ fun TrashScreen(
     viewModel: TrashViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val trashItems by viewModel.trashItems.collectAsState()
-    val expiredItems by viewModel.expiredItems.collectAsState()
-    val pendingIntentSender by viewModel.pendingIntentSender.collectAsState()
+    val trashItems by viewModel.trashItems.collectAsStateWithLifecycle()
+    val expiredItems by viewModel.expiredItems.collectAsStateWithLifecycle()
+    val pendingIntentSender by viewModel.pendingIntentSender.collectAsStateWithLifecycle()
     val selectionState = viewModel.selectionState
 
     var showConfirmDeletePermanentlyDialog by remember { mutableStateOf(false) }
@@ -122,47 +136,76 @@ fun TrashScreen(
 
     Scaffold(
         topBar = {
-            if (selectionState.isSelectionMode) {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "${selectionState.selectedIds.size} selected",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { selectionState.clearSelection() }) {
-                            Icon(imageVector = Icons.Default.Close, contentDescription = "Exit selection mode")
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { viewModel.restoreSelected(selectionState.selectedIds) }) {
-                            Icon(imageVector = Icons.Default.Refresh, contentDescription = "Restore selected")
-                        }
-                        IconButton(onClick = { showConfirmDeletePermanentlyDialog = true }) {
-                            Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete permanently")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                )
-            } else {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "Trash",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    },
-                    actions = {
-                        if (trashItems.isNotEmpty()) {
-                            TextButton(onClick = { showConfirmEmptyTrashDialog = true }) {
-                                Text("Empty Trash", color = MaterialTheme.colorScheme.error)
+            AnimatedContent(
+                targetState = selectionState.isSelectionMode,
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut()
+                },
+                label = "trashTopBarTransition"
+            ) { isSelection ->
+                if (isSelection) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = "${selectionState.selectedIds.size} selected",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { selectionState.clearSelection() }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Exit selection mode",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
                             }
-                        }
-                    }
-                )
+                        },
+                        actions = {
+                            IconButton(onClick = { viewModel.restoreSelected(selectionState.selectedIds) }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Restore,
+                                    contentDescription = "Restore selected",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            IconButton(onClick = { showConfirmDeletePermanentlyDialog = true }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.DeleteForever,
+                                    contentDescription = "Delete permanently",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        )
+                    )
+                } else {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = "Trash",
+                                style = MaterialTheme.typography.headlineSmall
+                            )
+                        },
+                        actions = {
+                            if (trashItems.isNotEmpty()) {
+                                TextButton(
+                                    onClick = { showConfirmEmptyTrashDialog = true },
+                                    colors = ButtonDefaults.textButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Text("Empty Trash")
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.background
+                        )
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -172,18 +215,20 @@ fun TrashScreen(
                 .padding(innerPadding)
         ) {
             if (expiredItems.isNotEmpty()) {
-                Surface(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
+                            .padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -192,7 +237,7 @@ fun TrashScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Info,
+                                imageVector = Icons.Outlined.Info,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.error
@@ -200,10 +245,16 @@ fun TrashScreen(
                             Text(
                                 text = "${expiredItems.size} item(s) in Trash are older than 30 days.",
                                 style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 8.dp)
+                                modifier = Modifier.padding(start = 10.dp)
                             )
                         }
-                        Button(onClick = { viewModel.purgeExpiredItems() }) {
+                        Button(
+                            onClick = { viewModel.purgeExpiredItems() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
+                        ) {
                             Text("Purge Now")
                         }
                     }
@@ -211,14 +262,14 @@ fun TrashScreen(
             }
 
             if (trashItems.isEmpty()) {
-                EmptyMediaState(message = "Trash is empty")
+                EmptyStates.Trash(modifier = Modifier.weight(1f))
             } else {
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 120.dp),
+                    columns = GridCells.Adaptive(minSize = 110.dp),
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(trashItems, key = { it.mediaId }) { item ->
                         val isSelected = selectionState.isSelected(item.mediaId)
@@ -258,77 +309,99 @@ private fun TrashTile(
         ImageRequest.Builder(context)
             .data(item.uriString)
             .size(300, 300)
-            .crossfade(true)
+            .crossfade(200)
             .build()
     }
 
     val daysLeft = remember(item.purgeAt) {
         val remainingMs = item.purgeAt - System.currentTimeMillis()
         val days = (remainingMs / (1000 * 60 * 60 * 24)).coerceAtLeast(0)
-        "$days days left"
+        "$days d"
     }
 
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Box(
-            modifier = Modifier
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = onLongClick
-                )
-        ) {
-            AsyncImage(
-                model = imageRequest,
-                contentDescription = item.displayName,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1.0f,
+        label = "trashTilePress"
+    )
 
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(4.dp),
-                shape = RoundedCornerShape(4.dp),
-                color = Color.Black.copy(alpha = 0.7f)
-            ) {
-                Text(
-                    text = daysLeft,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                )
+    Box(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
             }
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
+    ) {
+        AsyncImage(
+            model = imageRequest,
+            contentDescription = item.displayName,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
 
-            if (isSelectionMode) {
-                Box(
+        // Countdown Days Left Pill
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(5.dp),
+            shape = RoundedCornerShape(6.dp),
+            color = Color.Black.copy(alpha = 0.72f)
+        ) {
+            Text(
+                text = daysLeft,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            )
+        }
+
+        // Selection Overlay & Checkmark
+        if (isSelectionMode) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                        else Color.Black.copy(alpha = 0.15f)
+                    )
+            ) {
+                AnimatedVisibility(
+                    visible = isSelected,
+                    enter = fadeIn() + scaleIn(initialScale = 0.6f),
+                    exit = fadeOut() + scaleOut(targetScale = 0.6f),
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(if (isSelected) Color.Black.copy(alpha = 0.4f) else Color.Transparent)
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
                 ) {
-                    if (isSelected) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(6.dp)
-                                .size(22.dp)
-                                .background(Color.White, CircleShape)
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(6.dp)
-                                .size(22.dp)
-                                .background(Color.Black.copy(alpha = 0.3f), CircleShape)
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Selected",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .background(Color.White, CircleShape)
+                    )
+                }
+
+                if (!isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(6.dp)
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.35f))
+                    )
                 }
             }
         }

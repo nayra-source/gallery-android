@@ -1,18 +1,24 @@
 package com.aryan.gallery.ui.gallery
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -22,8 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Info
-import java.util.Locale
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -31,15 +36,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -47,11 +52,16 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.aryan.gallery.data.media.MediaItem
 import com.aryan.gallery.data.media.MediaType
+import com.aryan.gallery.ui.components.EmptyStates
+import com.aryan.gallery.ui.components.GalleryEmptyState
+import com.aryan.gallery.ui.components.GalleryErrorState
+import com.aryan.gallery.ui.components.ShimmerMediaGrid
+import java.util.Locale
 
 /**
- * Shared grid composable for rendering paged media items (photos and videos).
- * Supports thumbnail loading via Coil, video duration badges, selection state,
- * and Paging 3 loading/error/empty state handling.
+ * Modernized grid composable for rendering paged media items (photos and videos).
+ * Features shimmer skeleton loading, fluid animated selection states,
+ * refined 8dp rounded corner tiles with press feedback, and polished badge overlays.
  */
 @Composable
 fun MediaGrid(
@@ -60,58 +70,31 @@ fun MediaGrid(
     onMediaClick: (MediaItem, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-
     when (val refreshState = lazyPagingItems.loadState.refresh) {
         is LoadState.Loading -> {
-            Box(
-                modifier = modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+            ShimmerMediaGrid(
+                modifier = modifier,
+                tileCount = 18,
+                minTileSize = 104.dp,
+                cornerRadius = 12.dp
+            )
         }
 
         is LoadState.Error -> {
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.error
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Failed to load media items",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = refreshState.error.localizedMessage ?: "Unknown error occurred",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { lazyPagingItems.retry() }) {
-                    Text("Retry")
-                }
-            }
+            GalleryErrorState(
+                modifier = modifier,
+                title = "Failed to load media items",
+                message = refreshState.error.localizedMessage ?: "Check permissions or storage access",
+                onRetry = { lazyPagingItems.retry() }
+            )
         }
 
         is LoadState.NotLoading -> {
             if (lazyPagingItems.itemCount == 0) {
-                EmptyMediaState(modifier = modifier)
+                EmptyStates.Media(modifier = modifier)
             } else {
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 100.dp),
+                    columns = GridCells.Fixed(3),
                     modifier = modifier.fillMaxSize(),
                     contentPadding = PaddingValues(4.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -152,10 +135,14 @@ fun MediaGrid(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp),
+                                        .padding(20.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(28.dp),
+                                        strokeWidth = 2.5.dp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
                                 }
                             }
                         }
@@ -174,7 +161,7 @@ fun MediaGrid(
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.error
                                     )
-                                    Spacer(modifier = Modifier.size(8.dp))
+                                    Spacer(modifier = Modifier.size(12.dp))
                                     Button(onClick = { lazyPagingItems.retry() }) {
                                         Text("Retry")
                                     }
@@ -203,17 +190,30 @@ private fun MediaGridTile(
     val imageRequest = remember(item.uri) {
         ImageRequest.Builder(context)
             .data(item.uri)
-            .size(300, 300)
-            .crossfade(true)
+            .size(320, 320)
+            .crossfade(200)
             .build()
     }
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1.0f,
+        label = "tilePressScale"
+    )
 
     Box(
         modifier = Modifier
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
                 onClick = onClick,
                 onLongClick = onLongClick
             )
@@ -225,47 +225,71 @@ private fun MediaGridTile(
             modifier = Modifier.fillMaxSize()
         )
 
+        // Video Duration Badge with play icon
         if (item.mediaType == MediaType.VIDEO && item.durationMs > 0) {
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(4.dp),
-                shape = RoundedCornerShape(4.dp),
-                color = Color.Black.copy(alpha = 0.7f)
+                    .padding(6.dp),
+                shape = RoundedCornerShape(6.dp),
+                color = Color.Black.copy(alpha = 0.72f)
             ) {
-                Text(
-                    text = formatDuration(item.durationMs),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(modifier = Modifier.size(2.dp))
+                    Text(
+                        text = formatDuration(item.durationMs),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White
+                    )
+                }
             }
         }
 
+        // Selection Overlay & Animated Checkmark
         if (isSelectionMode) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(if (isSelected) Color.Black.copy(alpha = 0.4f) else Color.Transparent)
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                        else Color.Black.copy(alpha = 0.15f)
+                    )
             ) {
-                if (isSelected) {
+                AnimatedVisibility(
+                    visible = isSelected,
+                    enter = fadeIn() + scaleIn(initialScale = 0.6f),
+                    exit = fadeOut() + scaleOut(targetScale = 0.6f),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
-                        contentDescription = null,
+                        contentDescription = "Selected",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(6.dp)
-                            .size(22.dp)
+                            .size(24.dp)
                             .background(Color.White, CircleShape)
                     )
-                } else {
+                }
+
+                if (!isSelected) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(6.dp)
-                            .size(22.dp)
-                            .background(Color.Black.copy(alpha = 0.3f), CircleShape)
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.35f))
                     )
                 }
             }
@@ -273,32 +297,18 @@ private fun MediaGridTile(
     }
 }
 
+/**
+ * Backward-compatible empty media state composable.
+ */
 @Composable
 fun EmptyMediaState(
     modifier: Modifier = Modifier,
     message: String = "No photos or videos found"
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Info,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
+    GalleryEmptyState(
+        modifier = modifier,
+        title = message
+    )
 }
 
 /**

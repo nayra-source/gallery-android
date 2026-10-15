@@ -1,19 +1,31 @@
 package com.aryan.gallery.ui.navigation
 
+import android.net.Uri
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.CollectionsBookmark
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -28,8 +40,6 @@ import com.aryan.gallery.ui.pairing.PairingScreen
 import com.aryan.gallery.ui.settings.SettingsScreen
 import com.aryan.gallery.ui.trash.TrashScreen
 import com.aryan.gallery.ui.viewer.MediaViewerScreen
-
-import android.net.Uri
 
 sealed class NavRoute(val route: String) {
     data object Gallery : NavRoute("gallery")
@@ -55,7 +65,10 @@ sealed class NavRoute(val route: String) {
 }
 
 /**
- * Top-level navigation host for the Gallery application.
+ * Top-level navigation host for the Gallery application with:
+ * - Fluid screen entry/exit slide & fade transitions
+ * - Filled vs outlined iconography state for bottom tabs
+ * - Tonal surface elevation on NavigationBar
  */
 @Composable
 fun GalleryNavigation() {
@@ -73,9 +86,13 @@ fun GalleryNavigation() {
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    tonalElevation = 3.dp
+                ) {
+                    val isPhotosSelected = currentRoute == NavRoute.Gallery.route
                     NavigationBarItem(
-                        selected = currentRoute == NavRoute.Gallery.route,
+                        selected = isPhotosSelected,
                         onClick = {
                             navController.navigate(NavRoute.Gallery.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
@@ -85,11 +102,23 @@ fun GalleryNavigation() {
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(Icons.Default.Home, contentDescription = "Photos") },
-                        label = { Text("Photos") }
+                        icon = {
+                            Icon(
+                                imageVector = if (isPhotosSelected) Icons.Filled.PhotoLibrary else Icons.Outlined.PhotoLibrary,
+                                contentDescription = "Photos"
+                            )
+                        },
+                        label = { Text("Photos") },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.primary
+                        )
                     )
+
+                    val isAlbumsSelected = currentRoute == NavRoute.Albums.route
                     NavigationBarItem(
-                        selected = currentRoute == NavRoute.Albums.route,
+                        selected = isAlbumsSelected,
                         onClick = {
                             navController.navigate(NavRoute.Albums.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
@@ -99,11 +128,23 @@ fun GalleryNavigation() {
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Albums") },
-                        label = { Text("Albums") }
+                        icon = {
+                            Icon(
+                                imageVector = if (isAlbumsSelected) Icons.Filled.CollectionsBookmark else Icons.Outlined.CollectionsBookmark,
+                                contentDescription = "Albums"
+                            )
+                        },
+                        label = { Text("Albums") },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.primary
+                        )
                     )
+
+                    val isTrashSelected = currentRoute == NavRoute.Trash.route
                     NavigationBarItem(
-                        selected = currentRoute == NavRoute.Trash.route,
+                        selected = isTrashSelected,
                         onClick = {
                             navController.navigate(NavRoute.Trash.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
@@ -113,11 +154,23 @@ fun GalleryNavigation() {
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(Icons.Default.Delete, contentDescription = "Trash") },
-                        label = { Text("Trash") }
+                        icon = {
+                            Icon(
+                                imageVector = if (isTrashSelected) Icons.Filled.Delete else Icons.Outlined.Delete,
+                                contentDescription = "Trash"
+                            )
+                        },
+                        label = { Text("Trash") },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.primary
+                        )
                     )
+
+                    val isSettingsSelected = currentRoute == NavRoute.Settings.route
                     NavigationBarItem(
-                        selected = currentRoute == NavRoute.Settings.route,
+                        selected = isSettingsSelected,
                         onClick = {
                             navController.navigate(NavRoute.Settings.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
@@ -127,8 +180,18 @@ fun GalleryNavigation() {
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                        label = { Text("Settings") }
+                        icon = {
+                            Icon(
+                                imageVector = if (isSettingsSelected) Icons.Filled.Settings else Icons.Outlined.Settings,
+                                contentDescription = "Settings"
+                            )
+                        },
+                        label = { Text("Settings") },
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.primary
+                        )
                     )
                 }
             }
@@ -137,7 +200,23 @@ fun GalleryNavigation() {
         NavHost(
             navController = navController,
             startDestination = NavRoute.Gallery.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            enterTransition = {
+                fadeIn(animationSpec = tween(220)) +
+                    slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(220))
+            },
+            exitTransition = {
+                fadeOut(animationSpec = tween(180)) +
+                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start, tween(180))
+            },
+            popEnterTransition = {
+                fadeIn(animationSpec = tween(220)) +
+                    slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(220))
+            },
+            popExitTransition = {
+                fadeOut(animationSpec = tween(180)) +
+                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(180))
+            }
         ) {
             composable(NavRoute.Gallery.route) {
                 GalleryScreen(
