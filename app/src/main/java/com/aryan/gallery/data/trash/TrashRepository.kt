@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.IntentSender
 import android.net.Uri
 import android.provider.MediaStore
+import com.aryan.gallery.config.TrashConfig
 import com.aryan.gallery.data.media.MediaItem
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -16,7 +17,8 @@ import javax.inject.Singleton
 @Singleton
 class TrashRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val trashDao: TrashDao
+    private val trashDao: TrashDao,
+    private val trashConfig: TrashConfig
 ) {
 
     val trashItemsFlow: Flow<List<TrashEntity>> = trashDao.getAllTrashItems()
@@ -53,7 +55,7 @@ class TrashRepository @Inject constructor(
                 mediaType = item.mediaType.name,
                 durationMs = item.durationMs,
                 trashedAt = now,
-                purgeAt = now + DEFAULT_PURGE_DELAY_MS
+                purgeAt = now + trashConfig.retentionPeriodMs
             )
         }
         trashDao.insertAll(entities)

@@ -18,6 +18,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.util.concurrent.Executor
 
+import com.aryan.gallery.config.NotificationConfig
+
 class AutoPurgeWorkerTest {
 
     private val context: Context = mock()
@@ -65,7 +67,7 @@ class AutoPurgeWorkerTest {
 
         whenever(trashRepository.getExpiredTrashItems()).thenReturn(listOf(sampleEntity))
 
-        val worker = AutoPurgeWorker(context, workerParams, trashRepository)
+        val worker = AutoPurgeWorker(context, workerParams, trashRepository, NotificationConfig())
         val result = worker.doWork()
 
         assertEquals(ListenableWorker.Result.success(), result)

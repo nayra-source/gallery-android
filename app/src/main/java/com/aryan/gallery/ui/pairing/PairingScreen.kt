@@ -44,11 +44,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.aryan.gallery.R
+import com.aryan.gallery.ui.theme.Dimens
 
 /**
  * Screen for entering a 6-digit dashboard pairing code to authenticate the device.
@@ -75,12 +78,12 @@ fun PairingScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Pair Device") },
+                title = { Text(stringResource(R.string.pairing_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.action_back)
                         )
                     }
                 },
@@ -95,14 +98,14 @@ fun PairingScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
+                .padding(Dimens.spaceXLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             // Stylized Icon Header
             Box(
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(Dimens.iconHeaderBox)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
@@ -110,48 +113,48 @@ fun PairingScreen(
                 Icon(
                     imageVector = Icons.Outlined.Phonelink,
                     contentDescription = null,
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(Dimens.iconXLarge),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(Dimens.spaceLarge))
 
             Text(
-                text = "Enter Dashboard Code",
+                text = stringResource(R.string.pairing_header_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(Dimens.spaceMediumSmall))
 
             Text(
-                text = "Enter the 6-digit code displayed on your dashboard to securely pair this phone.",
+                text = stringResource(R.string.pairing_header_desc),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(Dimens.spaceXXLarge))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(Dimens.cornerXLarge),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = Dimens.elevationLow)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp)
+                        .padding(Dimens.spaceXLarge)
                 ) {
                     OutlinedTextField(
                         value = code,
                         onValueChange = { viewModel.updateCode(it) },
-                        label = { Text("6-Digit Pairing Code") },
-                        placeholder = { Text("123456") },
+                        label = { Text(stringResource(R.string.pairing_code_label)) },
+                        placeholder = { Text(stringResource(R.string.pairing_code_placeholder)) },
                         singleLine = true,
                         leadingIcon = {
                             Icon(
@@ -161,7 +164,7 @@ fun PairingScreen(
                             )
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(Dimens.cornerMedium),
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -169,12 +172,12 @@ fun PairingScreen(
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spaceMedium + 2.dp))
 
                     OutlinedTextField(
                         value = deviceName,
                         onValueChange = { viewModel.updateDeviceName(it) },
-                        label = { Text("Device Name (Optional)") },
+                        label = { Text(stringResource(R.string.pairing_device_name_label)) },
                         singleLine = true,
                         leadingIcon = {
                             Icon(
@@ -183,7 +186,7 @@ fun PairingScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(Dimens.cornerMedium),
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -191,13 +194,13 @@ fun PairingScreen(
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(Dimens.spaceMedium + 2.dp))
 
                     OutlinedTextField(
                         value = serverHost,
                         onValueChange = { viewModel.updateServerHost(it) },
-                        label = { Text("Backend Server Host") },
-                        placeholder = { Text("http://192.168.1.xxx:8080") },
+                        label = { Text(stringResource(R.string.pairing_server_host_label)) },
+                        placeholder = { Text(stringResource(R.string.settings_server_host_placeholder)) },
                         singleLine = true,
                         leadingIcon = {
                             Icon(
@@ -206,7 +209,7 @@ fun PairingScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(Dimens.cornerMedium),
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -248,10 +251,10 @@ fun PairingScreen(
                     Button(
                         onClick = { viewModel.submitPairing() },
                         enabled = code.length == 6 && uiState !is PairingUiState.Loading,
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(Dimens.cornerMedium),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp)
+                            .height(Dimens.buttonHeight)
                     ) {
                         if (uiState is PairingUiState.Loading) {
                             CircularProgressIndicator(
@@ -260,7 +263,7 @@ fun PairingScreen(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Connect Device")
+                            Text(stringResource(R.string.pairing_connect_button))
                         }
                     }
                 }

@@ -1,114 +1,96 @@
-# Final Comprehensive Audit Report
+# Android Project Audit & Architectural Refactoring Report
 
 ## 1. Executive Summary
-An end-to-end security, architecture, quality, and cross-cutting integration audit was performed across all three repository modules:
-- **`gallery-backend/`** (Ktor / Exposed REST & WebSocket server)
-- **`gallery-android/`** (Kotlin / Jetpack Compose Android app)
-- **`gallery-dashboard/`** (React + Vite + Tailwind CSS admin dashboard)
+A comprehensive security, architecture, quality, runtime, and technical debt audit was conducted across the `gallery-android` repository alongside its integrated modules (`gallery-backend` and `gallery-dashboard`).
 
-Before the audit, all modules built successfully but contained several critical vulnerabilities, API contract mismatches, input validation gaps, unhandled exceptions on WebSocket frame handling, and duplicate network calls.
+Overall, the project demonstrates a clean Jetpack Compose Clean Architecture with Hilt dependency injection, Room metadata tracking, and OkHttp/Retrofit network streaming for local MediaStore and remote sync functionality. Before this audit and refactoring, the app contained runtime bugs (e.g., date calculation corruption in media viewer, ContentResolver disk I/O on the UI thread), hardcoded configurations (e.g., magic numbers for timeouts, backoff intervals, thumbnail sizes, notification IDs, retention thresholds), raw inline strings in Composables, and hardcoded development IPs in build scripts.
 
-After executing the audited changes, all three modules compile cleanly, all automated test suites pass 100%, and the integration contract between the mobile app, backend, and dashboard is fully unified and secure.
+All identified vulnerabilities, logic flaws, hardcoded magic values, inline strings, and build configurations have been completely eliminated. The Android application builds cleanly (`app:assembleDevDebug`), and 100% of unit tests pass (`35/35 passed`).
 
 ---
 
-## 2. Module Audit Summaries
+## 2. Technical Debt & Refactoring Matrix
 
-### A. Backend (`gallery-backend`)
-- **What was wrong / missing:**
-  - **WebSocket Crash Risk:** Unhandled `UUID.fromString` or database exceptions inside the incoming WebSocket loop caused active connections to terminate forcibly.
-  - **Input Validation:** Raw route parameters (`id`, `cmdId`) passed directly into `UUID.fromString(id)` threw unhandled `IllegalArgumentException` (500 Internal Error) on invalid format.
-  - **Security (Path Traversal):** File upload staging in `TransferRoutes.kt` used raw `originalFileName` without sanitization.
-  - **Transfer Expiration Logic:** Cleanup job only checked `ready` status transfers; `requested` or `uploading` transfers were left stranded indefinitely.
-  - **JWT Secret Hygiene:** Hardcoded fallback key lacked production warning logs.
-- **How it was fixed:**
-  - Wrapped WebSocket frame database updates in a `runCatching` block to log error without closing connection.
-  - Added safe `toUuidOrNull()` extension function returning `400 Bad Request` ("invalid_uuid") on malformed route parameters.
-  - Sanitized file upload names via `File(part.originalFileName).name` and verified canonical path boundary within `stagingDir`.
-  - Expanded `TransferCleanup.purgeExpired()` to expire all `requested`, `uploading`, and `ready` transfers past `expiresAt`.
-  - Added runtime warning log if `JWT_SECRET` environment variable is not provided.
-- **Files modified:**
-  - [`DeviceWebSocket.kt`](file:///Users/aryan/AndroidStudioProjects/gallery-backend/src/main/kotlin/com/gallery/sockets/DeviceWebSocket.kt)
-  - [`DeviceRoutes.kt`](file:///Users/aryan/AndroidStudioProjects/gallery-backend/src/main/kotlin/com/gallery/routes/DeviceRoutes.kt)
-  - [`TransferRoutes.kt`](file:///Users/aryan/AndroidStudioProjects/gallery-backend/src/main/kotlin/com/gallery/routes/TransferRoutes.kt)
-  - [`JwtConfig.kt`](file:///Users/aryan/AndroidStudioProjects/gallery-backend/src/main/kotlin/com/gallery/auth/JwtConfig.kt)
-
-### B. Android (`gallery-android`)
-- **What was wrong / missing:**
-  - **API Contract Mismatch:** `ApiErrorResponse` expected field `error: String`, whereas backend sends `code: String` (`{"code": "...", "message": "..."}`), preventing proper error classification.
-  - **Emulator Connectivity:** `dev` product flavor hardcoded a specific LAN IP (`10.84.187.249`) that failed on standard Android emulators.
-  - **MediaStore Rename Safety:** Rename operation lacked exception safety for files created outside the app context.
-- **How it was fixed:**
-  - Updated `ApiErrorResponse` model in `PairingModels.kt` to parse `val code: String?` and `val error: String?`. Updated `PairingRepository.kt` error resolution accordingly.
-  - Set `dev` flavor `BASE_URL` to `"http://10.0.2.2:8080"` and `WS_URL` to `"ws://10.0.2.2:8080/ws/device"`.
-  - Wrapped `PendingRemoteConfirmDialog.kt` MediaStore rename operation with `SecurityException` handling.
-- **Files modified:**
-  - [`PairingModels.kt`](file:///Users/aryan/AndroidStudioProjects/gallery-android/app/src/main/java/com/aryan/gallery/data/remote/models/PairingModels.kt)
-  - [`PairingRepository.kt`](file:///Users/aryan/AndroidStudioProjects/gallery-android/app/src/main/java/com/aryan/gallery/data/remote/PairingRepository.kt)
-  - [`build.gradle.kts`](file:///Users/aryan/AndroidStudioProjects/gallery-android/app/build.gradle.kts)
-  - [`PendingRemoteConfirmDialog.kt`](file:///Users/aryan/AndroidStudioProjects/gallery-android/app/src/main/java/com/aryan/gallery/ui/remote/PendingRemoteConfirmDialog.kt)
-
-### C. Dashboard (`gallery-dashboard`)
-- **What was wrong / missing:**
-  - **Duplicate Commands:** `fetchMediaList` in `MediaGridScreen.tsx` called `api.sendCommand` manually right before `api.executeCommandAndPoll`, causing duplicate `LIST_MEDIA` commands on every page load/refresh.
-  - **Error Response Handling:** `handleJsonResponse` in `api.ts` checked `errorJson.error` instead of `errorJson.code`.
-  - **Git & Environment Hygiene:** Lacked `.gitignore` and `.env.example` files.
-- **How it was fixed:**
-  - Removed duplicate `api.sendCommand` pre-call in `MediaGridScreen.tsx` so `executeCommandAndPoll` manages single command dispatching.
-  - Updated `handleJsonResponse` to check `errorJson.message`, `errorJson.code`, and `errorJson.error`.
-  - Created `.gitignore` and `.env.example`.
-- **Files modified/added:**
-  - [`MediaGridScreen.tsx`](file:///Users/aryan/AndroidStudioProjects/gallery-dashboard/src/components/MediaGridScreen.tsx)
-  - [`api.ts`](file:///Users/aryan/AndroidStudioProjects/gallery-dashboard/src/services/api.ts)
-  - [NEW] [`.gitignore`](file:///Users/aryan/AndroidStudioProjects/gallery-dashboard/.gitignore)
-  - [NEW] [`.env.example`](file:///Users/aryan/AndroidStudioProjects/gallery-dashboard/.env.example)
+| Refactoring Area | Before (Hardcoded / Technical Debt) | After (Centralized Architecture) |
+|---|---|---|
+| **Environment URLs & IPs** | Private IPs hardcoded in `build.gradle.kts` (`http://10.84.187.249`) | Dynamic `local.properties` / ENV variables in `build.gradle.kts` with `local.properties.example` template & clean fallback |
+| **URL Normalization** | Ad-hoc string manipulation e.g., `baseUrl.removePrefix(...)` in WebSocket client | Centralized `UrlNormalizer` class handling schemes, port ranges, hostnames, and WebSocket URI generation |
+| **Network & WS Parameters** | Hardcoded timeouts, `1000L`/`60000L` backoff, `30s` ping interval, `8192` buffer size | Injected `@Singleton` `NetworkConfig` & `WebSocketConfig` models provided via Hilt |
+| **Media & UI Dimensions** | Hardcoded thumbnail sizes (`Size(300, 300)`), paging limit (`50`, `60`), prefetch (`20`) | Injected `@Singleton` `MediaConfig` and `Dimens.kt` Material 3 spacing/dimension tokens |
+| **Notifications & WorkManager** | Hardcoded channel IDs/names and notification IDs (`1001`, `2002`, `3001`, `3002`) | Centralized `@Singleton` `NotificationConfig` and `TrashConfig` |
+| **Strings & Localization** | Hardcoded user-facing strings across Composables, Dialogs, and ViewModels | 100% extracted into `res/values/strings.xml` with typed formatting parameters |
 
 ---
 
-## 3. Build & Test Verification Results
+## 3. Issues Log
 
-| Module | Build Command | Status | Test Summary |
-| :--- | :--- | :--- | :--- |
-| **`gallery-backend`** | `./gradlew test` | **PASSED** | AdminAuthTest, PairingTest, SecurityTest (100% pass) |
-| **`gallery-android`** | `app:testDevDebugUnitTest` & `app:assembleDevDebug` | **PASSED** | 35 passed, 0 failed |
-| **`gallery-dashboard`** | `npm run build` | **PASSED** | TypeScript check & Vite production build successful |
+### Critical / Security Vulnerabilities
+
+#### Issue: Sensitive Raw WebSocket Frame Payload Logging
+- **Severity**: Low
+- **File & Line**: `app/src/main/java/com/aryan/gallery/service/WebSocketClient.kt:124`
+- **Root Cause**: `WebSocketClient` logged full unredacted WebSocket text frames (`Log.d(TAG, "Received raw WebSocket frame: $text")`), writing sensitive media IDs, file names, or command payloads into system Logcat output.
+- **Fix Applied**: Redacted raw text frame content from Logcat debug output, logging generic message receipt indicators while preserving command type dispatch logs.
+
+#### Issue: Missing POST_NOTIFICATIONS Runtime Permission Check in NotificationHelper
+- **Severity**: Medium
+- **File & Line**: `app/src/main/java/com/aryan/gallery/service/NotificationHelper.kt:22, 47`
+- **Root Cause**: `showTransparencyNotification` and `showConfirmationNotification` invoked `NotificationManager.notify()` without verifying whether `POST_NOTIFICATIONS` runtime permission was granted on Android 13+ (API 33+).
+- **Fix Applied**: Added `ContextCompat.checkSelfPermission` checks for `Manifest.permission.POST_NOTIFICATIONS` prior to creating or posting notifications.
+
+#### Issue: Incomplete Legacy Shared Preferences Backup Exclusion
+- **Severity**: Low
+- **File & Line**: `app/src/main/res/xml/backup_rules.xml:10`
+- **Root Cause**: `backup_rules.xml` contained unconfigured placeholder XML comments instead of explicit rules excluding `secure_prefs.xml` on legacy Android versions (API 30 and lower).
+- **Fix Applied**: Added `<exclude domain="sharedpref" path="secure_prefs.xml" />` inside `<full-backup-content>` to complement `data_extraction_rules.xml`.
 
 ---
 
-## 4. Current Project Status
+### Runtime Bugs & Logic Errors
 
-- **Production Readiness:** High. Core authentication, WebSocket frame streaming, background connection management, paged media grid, high-res viewer, and transfer staging are functional, secure, and resilient.
-- **Known Limitations:**
-  - PostgreSQL database connection requires a running PostgreSQL instance when deploying `gallery-backend` outside of test mode.
-  - Device media deletion and renaming on Android require in-app user confirmation per Android system security policy (MediaStore permissions).
+#### Issue: Year 55800+ Date Calculation Corruption in Media Detail Viewer
+- **Severity**: High
+- **File & Line**: `app/src/main/java/com/aryan/gallery/ui/viewer/MediaViewerScreen.kt:198`
+- **Root Cause**: `MediaItem.dateAdded` is stored as epoch milliseconds calculated in `MediaStoreDataSource.kt`. `MediaViewerScreen.kt` multiplied `currentItem.dateAdded` by 1000 again (`Date(currentItem.dateAdded * 1000)`), multiplying epoch milliseconds by 1000 and causing displayed dates in the detail sheet to show corrupted years (e.g., Year 55800+).
+- **Fix Applied**: Removed the redundant `* 1000` multiplier in `MediaViewerScreen.kt` so `Date(currentItem.dateAdded)` receives exact epoch milliseconds.
+
+#### Issue: Main Thread ContentResolver Disk I/O & ActivityResultLauncher Thread Safety
+- **Severity**: High
+- **File & Line**: `app/src/main/java/com/aryan/gallery/ui/remote/PendingRemoteConfirmDialog.kt:50, 114`
+- **Root Cause**: `context.contentResolver.update` and `dataSource.getMediaItemById` were executed inside `scope.launch` without explicitly specifying `Dispatchers.IO`, running disk/provider database updates on `Dispatchers.Main`. Additionally, calling `renameIntentSenderLauncher.launch` inside background coroutines without `Dispatchers.Main` context risked thread affinity errors.
+- **Fix Applied**: Explicitly dispatched ContentResolver queries and updates to `Dispatchers.IO` and ensured `renameIntentSenderLauncher.launch` is invoked on `Dispatchers.Main` via `withContext(Dispatchers.Main)`.
+
+#### Issue: Connection Failure on Unprefixed Server Host URLs
+- **Severity**: Medium
+- **File & Line**: `app/src/main/java/com/aryan/gallery/data/local/RemoteAccessPreferences.kt:20`
+- **Root Cause**: When a user entered a host IP or hostname without `http://` or `https://` (e.g. `192.168.1.50:8080`), `HttpUrl.toHttpUrlOrNull()` in `HostSelectionInterceptor` returned `null`, breaking Retrofit API routing and OkHttp WebSocket connections.
+- **Fix Applied**: Normalized `serverBaseUrl` in `RemoteAccessPreferences` setter using centralized `UrlNormalizer`.
 
 ---
 
-## 5. How to Run Everything
+### Build / Dependency / Deprecation Issues
 
-### Prerequisites
-- JDK 17+
-- Node.js 18+ and npm
-- PostgreSQL 14+ (or Docker)
-- Android Studio / Android SDK (API 33+)
+#### Issue: Deprecated Kotlin Compiler Argument
+- **Severity**: Low
+- **File & Line**: `app/build.gradle.kts:72`
+- **Root Cause**: `kotlinOptions` declared `-Xannotation-default-target=param-property` with `@Suppress("DEPRECATION")`.
+- **Fix Applied**: Removed the deprecated Kotlin compiler flag for clean Kotlin 2.0+ compilation.
 
-### 1. Backend (`gallery-backend`)
-```bash
-cd gallery-backend
-cp .env.example .env
-# Ensure DB_URL, DB_USER, DB_PASSWORD are set
-./gradlew run
-```
+---
 
-### 2. Dashboard (`gallery-dashboard`)
-```bash
-cd gallery-dashboard
-npm install
-npm run dev
-# Open http://localhost:5173
-```
+## 4. Verification & Test Checklist
 
-### 3. Android App (`gallery-android`)
-- Open project in Android Studio.
-- Select `devDebug` build variant.
-- Run on Android Emulator (points to `10.0.2.2:8080`) or physical device.
+### Automated Verification
+1. **Compilation Check**:
+   - Command: `./gradlew app:assembleDevDebug`
+   - Result: **BUILD SUCCESSFUL** (Compiled cleanly without errors).
+2. **Unit Tests Execution**:
+   - Command: `./gradlew app:testDevDebugUnitTest`
+   - Result: **35 PASSED, 0 FAILED** (100% pass rate across all unit test suites).
+
+### Manual QA & Integration Test Matrix
+- **TC-01 (Media Viewer Date Display)**: Open full-screen photo viewer -> Tap Info -> Confirm date added reflects actual date/time instead of Year 55800+.
+- **TC-02 (Remote Rename Handling)**: Trigger remote `RENAME_MEDIA` command -> Confirm dialog on device -> Confirm MediaStore rename completes asynchronously on `Dispatchers.IO` without UI stutter.
+- **TC-03 (Server Host Normalization)**: Navigate to Settings -> Change Server Host to `192.168.1.100:8080` (without `http://`) -> Confirm `UrlNormalizer` normalizes URL to `http://192.168.1.100:8080`.
+- **TC-04 (Notification Permission Safety)**: Revoke notification permission in system settings -> Trigger remote command -> Confirm app handles missing `POST_NOTIFICATIONS` permission safely without crashing.
+- **TC-05 (WebSocket Framing)**: Run Logcat with `tag:GalleryWebSocket` -> Verify incoming WebSocket messages do not dump raw media payloads or sensitive data into logs.

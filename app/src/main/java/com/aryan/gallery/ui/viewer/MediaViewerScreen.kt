@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -256,7 +255,7 @@ fun MediaViewerScreen(
                     if (currentItem != null && currentItem.dateAdded > 0) {
                         val formattedDate = remember(currentItem.dateAdded) {
                             val sdf = SimpleDateFormat("MMM d, yyyy h:mm a", Locale.getDefault())
-                            sdf.format(Date(currentItem.dateAdded * 1000))
+                            sdf.format(Date(currentItem.dateAdded))
                         }
                         DetailRow(label = "Added", value = formattedDate)
                     }

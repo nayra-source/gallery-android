@@ -56,10 +56,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.aryan.gallery.R
 import com.aryan.gallery.service.GalleryConnectionService
+import com.aryan.gallery.ui.theme.Dimens
 
 /**
  * Modernized Settings Screen with grouped sections:
@@ -90,13 +93,13 @@ fun SettingsScreen(
             onDismissRequest = { viewModel.dismissBatteryOptimizationDialog() },
             title = {
                 Text(
-                    text = "Background Sync",
+                    text = stringResource(R.string.settings_battery_dialog_title),
                     style = MaterialTheme.typography.titleMedium
                 )
             },
             text = {
                 Text(
-                    text = "Allow Gallery to run in the background without battery restriction so remote access stays active reliably.",
+                    text = stringResource(R.string.settings_battery_dialog_text),
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -111,12 +114,12 @@ fun SettingsScreen(
                         context.startActivity(intent)
                     }
                 ) {
-                    Text("Allow Background Running")
+                    Text(stringResource(R.string.settings_battery_dialog_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.dismissBatteryOptimizationDialog() }) {
-                    Text("Not Now")
+                    Text(stringResource(R.string.settings_battery_dialog_dismiss))
                 }
             }
         )
@@ -127,7 +130,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Settings",
+                        text = stringResource(R.string.settings_title),
                         style = MaterialTheme.typography.headlineSmall
                     )
                 },
@@ -146,20 +149,20 @@ fun SettingsScreen(
         ) {
             // Section 1: Dashboard Pairing
             item {
-                SettingsSectionHeader(title = "DASHBOARD PAIRING", icon = Icons.Outlined.Phonelink)
-                Spacer(modifier = Modifier.height(8.dp))
+                SettingsSectionHeader(title = stringResource(R.string.settings_section_pairing), icon = Icons.Outlined.Phonelink)
+                Spacer(modifier = Modifier.height(Dimens.spaceMediumSmall))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(Dimens.cornerXLarge),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = Dimens.elevationLow)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp)
+                            .padding(Dimens.spaceLarge + 2.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -168,13 +171,13 @@ fun SettingsScreen(
                         ) {
                             Column {
                                 Text(
-                                    text = "Connection Status",
+                                    text = stringResource(R.string.settings_connection_status),
                                     style = MaterialTheme.typography.titleMedium,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 if (!deviceId.isNullOrEmpty()) {
                                     Text(
-                                        text = "ID: $deviceId",
+                                        text = stringResource(R.string.settings_device_id_fmt, deviceId!!),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -183,12 +186,12 @@ fun SettingsScreen(
 
                             if (isPaired) {
                                 Surface(
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = RoundedCornerShape(Dimens.cornerMediumSmall),
                                     color = MaterialTheme.colorScheme.secondaryContainer
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        modifier = Modifier.padding(horizontal = Dimens.spaceMediumSmall, vertical = Dimens.spaceSmall)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Check,
@@ -196,9 +199,9 @@ fun SettingsScreen(
                                             modifier = Modifier.size(14.dp),
                                             tint = MaterialTheme.colorScheme.onSecondaryContainer
                                         )
-                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Spacer(modifier = Modifier.width(Dimens.spaceSmall))
                                         Text(
-                                            text = "Paired",
+                                            text = stringResource(R.string.settings_status_paired),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSecondaryContainer
                                         )
@@ -206,20 +209,20 @@ fun SettingsScreen(
                                 }
                             } else {
                                 Surface(
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = RoundedCornerShape(Dimens.cornerMediumSmall),
                                     color = MaterialTheme.colorScheme.surfaceContainerHighest
                                 ) {
                                     Text(
-                                        text = "Not Paired",
+                                        text = stringResource(R.string.settings_status_not_paired),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        modifier = Modifier.padding(horizontal = Dimens.spaceMediumSmall, vertical = Dimens.spaceSmall)
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(Dimens.spaceMedium + 2.dp))
 
                         if (isPaired) {
                             OutlinedButton(
@@ -228,7 +231,7 @@ fun SettingsScreen(
                                     context.stopService(Intent(context, GalleryConnectionService::class.java))
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(Dimens.cornerMedium),
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     contentColor = MaterialTheme.colorScheme.error
                                 )
@@ -236,26 +239,26 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = Icons.Outlined.PowerSettingsNew,
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(Dimens.iconSmall)
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Unpair Device")
+                                Spacer(modifier = Modifier.width(Dimens.cornerSmall))
+                                Text(stringResource(R.string.settings_unpair_button))
                             }
                         } else {
                             Text(
-                                text = "Connect this phone to your desktop dashboard to enable remote backup, streaming, and commands.",
+                                text = stringResource(R.string.settings_pairing_prompt),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            Spacer(modifier = Modifier.height(14.dp))
+                            Spacer(modifier = Modifier.height(Dimens.spaceMedium + 2.dp))
 
                             Button(
                                 onClick = onNavigateToPairing,
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(10.dp)
+                                shape = RoundedCornerShape(Dimens.cornerMedium)
                             ) {
-                                Text("Pair This Device")
+                                Text(stringResource(R.string.settings_pair_device_button))
                             }
                         }
                     }
@@ -264,37 +267,37 @@ fun SettingsScreen(
 
             // Section 2: Remote Access & Sync
             item {
-                SettingsSectionHeader(title = "REMOTE ACCESS & SYNC", icon = Icons.Outlined.CloudSync)
-                Spacer(modifier = Modifier.height(8.dp))
+                SettingsSectionHeader(title = stringResource(R.string.settings_section_sync), icon = Icons.Outlined.CloudSync)
+                Spacer(modifier = Modifier.height(Dimens.spaceMediumSmall))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(Dimens.cornerXLarge),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = Dimens.elevationLow)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp),
+                            .padding(Dimens.spaceLarge + 2.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Remote Access Service",
+                                text = stringResource(R.string.settings_remote_access_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Spacer(modifier = Modifier.height(Dimens.spaceXSmall))
                             Text(
-                                text = "Run persistent WebSocket background service to receive commands from paired dashboard.",
+                                text = stringResource(R.string.settings_remote_access_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(Dimens.spaceMedium))
                         Switch(
                             checked = isRemoteAccessEnabled,
                             onCheckedChange = { enabled ->
@@ -317,40 +320,40 @@ fun SettingsScreen(
 
             // Section 3: Server Configuration
             item {
-                SettingsSectionHeader(title = "SERVER CONFIGURATION", icon = Icons.Outlined.Dns)
-                Spacer(modifier = Modifier.height(8.dp))
+                SettingsSectionHeader(title = stringResource(R.string.settings_section_server), icon = Icons.Outlined.Dns)
+                Spacer(modifier = Modifier.height(Dimens.spaceMediumSmall))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(Dimens.cornerXLarge),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = Dimens.elevationLow)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp)
+                            .padding(Dimens.spaceLarge + 2.dp)
                     ) {
                         Text(
-                            text = "Backend Server Host",
+                            text = stringResource(R.string.settings_server_host_title),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(Dimens.spaceSmall))
                         Text(
-                            text = "Configure LAN URL when debugging or testing on a physical phone via local Wi-Fi.",
+                            text = stringResource(R.string.settings_server_host_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(Dimens.spaceMedium))
                         OutlinedTextField(
                             value = serverHost,
                             onValueChange = { viewModel.updateServerHost(it) },
-                            label = { Text("Server Host URL") },
-                            placeholder = { Text("http://192.168.1.xxx:8080") },
+                            label = { Text(stringResource(R.string.settings_server_host_label)) },
+                            placeholder = { Text(stringResource(R.string.settings_server_host_placeholder)) },
                             singleLine = true,
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(Dimens.cornerMedium),
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -363,50 +366,50 @@ fun SettingsScreen(
 
             // Section 4: About
             item {
-                SettingsSectionHeader(title = "ABOUT", icon = Icons.Outlined.Info)
-                Spacer(modifier = Modifier.height(8.dp))
+                SettingsSectionHeader(title = stringResource(R.string.settings_section_about), icon = Icons.Outlined.Info)
+                Spacer(modifier = Modifier.height(Dimens.spaceMediumSmall))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(Dimens.cornerXLarge),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = Dimens.elevationLow)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp)
+                            .padding(Dimens.spaceLarge + 2.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "App Version",
+                                text = stringResource(R.string.settings_app_version),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "2.0.0",
+                                text = stringResource(R.string.settings_app_version_value),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Dimens.spaceMediumSmall))
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Dimens.spaceMediumSmall))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Architecture",
+                                text = stringResource(R.string.settings_architecture),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "M3 Jetpack Compose",
+                                text = stringResource(R.string.settings_architecture_value),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )

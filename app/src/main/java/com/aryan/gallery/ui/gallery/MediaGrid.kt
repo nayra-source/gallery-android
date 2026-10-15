@@ -45,17 +45,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.aryan.gallery.R
 import com.aryan.gallery.data.media.MediaItem
 import com.aryan.gallery.data.media.MediaType
 import com.aryan.gallery.ui.components.EmptyStates
 import com.aryan.gallery.ui.components.GalleryEmptyState
 import com.aryan.gallery.ui.components.GalleryErrorState
 import com.aryan.gallery.ui.components.ShimmerMediaGrid
+import com.aryan.gallery.ui.theme.Dimens
 import java.util.Locale
 
 /**
@@ -75,16 +78,16 @@ fun MediaGrid(
             ShimmerMediaGrid(
                 modifier = modifier,
                 tileCount = 18,
-                minTileSize = 104.dp,
-                cornerRadius = 12.dp
+                minTileSize = Dimens.gridTileMinSize,
+                cornerRadius = Dimens.cornerLarge
             )
         }
 
         is LoadState.Error -> {
             GalleryErrorState(
                 modifier = modifier,
-                title = "Failed to load media items",
-                message = refreshState.error.localizedMessage ?: "Check permissions or storage access",
+                title = stringResource(R.string.error_load_media_failed),
+                message = refreshState.error.localizedMessage ?: stringResource(R.string.error_check_permissions),
                 onRetry = { lazyPagingItems.retry() }
             )
         }

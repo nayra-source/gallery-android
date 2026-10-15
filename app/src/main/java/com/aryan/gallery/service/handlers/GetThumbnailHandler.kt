@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.provider.MediaStore
 import android.util.Size
+import com.aryan.gallery.config.MediaConfig
 import com.aryan.gallery.data.media.MediaStoreDataSource
 import com.aryan.gallery.data.remote.TransferApi
 import com.aryan.gallery.service.DeviceCommandEnvelope
@@ -44,6 +45,7 @@ class GetThumbnailHandler @Inject constructor(
     @ApplicationContext private val context: Context,
     private val dataSource: MediaStoreDataSource,
     private val transferApi: TransferApi,
+    private val mediaConfig: MediaConfig,
     private val json: Json
 ) : CommandHandler {
 
@@ -68,10 +70,11 @@ class GetThumbnailHandler @Inject constructor(
                 )
             val uri = mediaItem.uri
 
-            val bitmap = context.contentResolver.loadThumbnail(uri, Size(300, 300), null)
+            val thumbnailSize = Size(mediaConfig.defaultThumbnailWidth, mediaConfig.defaultThumbnailHeight)
+            val bitmap = context.contentResolver.loadThumbnail(uri, thumbnailSize, null)
             tempFile = File.createTempFile("thumb_$mediaId", ".jpg", context.cacheDir)
             FileOutputStream(tempFile).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, mediaConfig.thumbnailJpegQuality, out)
             }
 
             val requestFile = tempFile.asRequestBody("image/jpeg".toMediaType())

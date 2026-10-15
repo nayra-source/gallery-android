@@ -1,0 +1,8 @@
+# Location of the SDK. This is specific to each developer's machine.
+# sdk.dir=/Users/username/Library/Android/sdk
+
+# Custom backend server configuration for 'dev' environment product flavor.
+# Defaults to Android Emulator host alias (10.0.2.2:8080) if omitted.
+# Change to your computer's LAN IP (e.g., http://192.168.1.150:8080) when debugging on physical devices over Wi-Fi.
+DEV_BASE_URL=http://10.0.2.2:8080
+DEV_WS_URL=ws://10.0.2.2:8080/ws/device

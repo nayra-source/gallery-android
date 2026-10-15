@@ -7,6 +7,7 @@ import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.aryan.gallery.config.TrashConfig
 import com.aryan.gallery.data.local.RemoteAccessPreferences
 import com.aryan.gallery.data.local.TokenStore
 import com.aryan.gallery.data.trash.AutoPurgeWorker
@@ -32,6 +33,9 @@ class GalleryApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var remoteAccessPreferences: RemoteAccessPreferences
 
+    @Inject
+    lateinit var trashConfig: TrashConfig
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -44,9 +48,12 @@ class GalleryApplication : Application(), Configuration.Provider {
     }
 
     private fun scheduleAutoPurgeWorker() {
-        val purgeWorkRequest = PeriodicWorkRequestBuilder<AutoPurgeWorker>(1, TimeUnit.DAYS).build()
+        val purgeWorkRequest = PeriodicWorkRequestBuilder<AutoPurgeWorker>(
+            trashConfig.autoPurgeWorkerIntervalDays,
+            TimeUnit.DAYS
+        ).build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "AutoPurgeWorker",
+            trashConfig.autoPurgeWorkName,
             ExistingPeriodicWorkPolicy.KEEP,
             purgeWorkRequest
         )

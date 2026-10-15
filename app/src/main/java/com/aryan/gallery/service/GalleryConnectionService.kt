@@ -11,14 +11,13 @@ import android.content.pm.ServiceInfo
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.aryan.gallery.MainActivity
+import com.aryan.gallery.config.NotificationConfig
 import com.aryan.gallery.data.local.RemoteAccessPreferences
 import com.aryan.gallery.data.local.TokenStore
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 const val ACTION_DISCONNECT = "com.aryan.gallery.action.DISCONNECT"
-private const val CHANNEL_ID = "gallery_sync_channel"
-private const val NOTIFICATION_ID = 2002
 
 /**
  * Foreground service that maintains a persistent WebSocket connection for remote gallery sync.
@@ -35,6 +34,9 @@ class GalleryConnectionService : Service() {
 
     @Inject
     lateinit var remoteAccessPreferences: RemoteAccessPreferences
+
+    @Inject
+    lateinit var notificationConfig: NotificationConfig
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -54,7 +56,7 @@ class GalleryConnectionService : Service() {
 
         val notification = buildForegroundNotification()
         startForeground(
-            NOTIFICATION_ID,
+            notificationConfig.syncNotificationId,
             notification,
             ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
         )
@@ -65,7 +67,6 @@ class GalleryConnectionService : Service() {
     }
 
     override fun onDestroy() {
-
         webSocketClient.disconnect()
         super.onDestroy()
     }
@@ -75,11 +76,11 @@ class GalleryConnectionService : Service() {
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Gallery Sync Service",
+            notificationConfig.syncChannelId,
+            notificationConfig.syncChannelName,
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Maintains persistent background connection for remote gallery commands"
+            description = notificationConfig.syncChannelDescription
         }
         notificationManager.createNotificationChannel(channel)
 
@@ -103,7 +104,7 @@ class GalleryConnectionService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, notificationConfig.syncChannelId)
             .setSmallIcon(android.R.drawable.ic_popup_sync)
             .setContentTitle("Gallery Sync Active")
             .setContentText("Connected to background sync server")

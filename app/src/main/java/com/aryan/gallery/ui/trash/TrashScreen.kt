@@ -66,13 +66,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.aryan.gallery.R
 import com.aryan.gallery.data.trash.TrashEntity
 import com.aryan.gallery.ui.components.EmptyStates
+import com.aryan.gallery.ui.theme.Dimens
 
 /**
  * Screen displaying local trashed items with options to restore, delete permanently, or empty trash.
@@ -110,9 +113,9 @@ fun TrashScreen(
 
     if (showConfirmDeletePermanentlyDialog) {
         ConfirmDialog(
-            title = "Delete Permanently?",
-            text = "Selected item(s) will be permanently deleted from your device. This action cannot be undone.",
-            confirmButtonText = "Delete Forever",
+            title = stringResource(R.string.trash_delete_dialog_title),
+            text = stringResource(R.string.trash_delete_dialog_text),
+            confirmButtonText = stringResource(R.string.trash_delete_dialog_confirm),
             onConfirm = {
                 showConfirmDeletePermanentlyDialog = false
                 viewModel.deletePermanentlySelected(selectionState.selectedIds)
@@ -123,9 +126,9 @@ fun TrashScreen(
 
     if (showConfirmEmptyTrashDialog) {
         ConfirmDialog(
-            title = "Empty Trash?",
-            text = "All items in Trash will be permanently deleted from your device. This action cannot be undone.",
-            confirmButtonText = "Empty Trash",
+            title = stringResource(R.string.trash_empty_dialog_title),
+            text = stringResource(R.string.trash_empty_dialog_text),
+            confirmButtonText = stringResource(R.string.trash_empty_button),
             onConfirm = {
                 showConfirmEmptyTrashDialog = false
                 viewModel.emptyTrash()
@@ -147,7 +150,7 @@ fun TrashScreen(
                     TopAppBar(
                         title = {
                             Text(
-                                text = "${selectionState.selectedIds.size} selected",
+                                text = stringResource(R.string.gallery_selected_count_fmt, selectionState.selectedIds.size),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -156,7 +159,7 @@ fun TrashScreen(
                             IconButton(onClick = { selectionState.clearSelection() }) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Exit selection mode",
+                                    contentDescription = stringResource(R.string.gallery_exit_selection_desc),
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
@@ -165,14 +168,14 @@ fun TrashScreen(
                             IconButton(onClick = { viewModel.restoreSelected(selectionState.selectedIds) }) {
                                 Icon(
                                     imageVector = Icons.Outlined.Restore,
-                                    contentDescription = "Restore selected",
+                                    contentDescription = stringResource(R.string.trash_restore_selected_desc),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
                             IconButton(onClick = { showConfirmDeletePermanentlyDialog = true }) {
                                 Icon(
                                     imageVector = Icons.Outlined.DeleteForever,
-                                    contentDescription = "Delete permanently",
+                                    contentDescription = stringResource(R.string.trash_delete_permanently_desc),
                                     tint = MaterialTheme.colorScheme.error
                                 )
                             }
@@ -185,7 +188,7 @@ fun TrashScreen(
                     TopAppBar(
                         title = {
                             Text(
-                                text = "Trash",
+                                text = stringResource(R.string.trash_title),
                                 style = MaterialTheme.typography.headlineSmall
                             )
                         },
@@ -197,7 +200,7 @@ fun TrashScreen(
                                         contentColor = MaterialTheme.colorScheme.error
                                     )
                                 ) {
-                                    Text("Empty Trash")
+                                    Text(stringResource(R.string.trash_empty_button))
                                 }
                             }
                         },
@@ -218,8 +221,8 @@ fun TrashScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
+                        .padding(horizontal = Dimens.spaceMedium, vertical = Dimens.spaceMediumSmall),
+                    shape = RoundedCornerShape(Dimens.cornerLarge),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.onErrorContainer
@@ -228,7 +231,7 @@ fun TrashScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(14.dp),
+                            .padding(Dimens.spaceMedium + 2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -239,13 +242,13 @@ fun TrashScreen(
                             Icon(
                                 imageVector = Icons.Outlined.Info,
                                 contentDescription = null,
-                                modifier = Modifier.size(20.dp),
+                                modifier = Modifier.size(Dimens.iconMedium),
                                 tint = MaterialTheme.colorScheme.error
                             )
                             Text(
-                                text = "${expiredItems.size} item(s) in Trash are older than 30 days.",
+                                text = stringResource(R.string.trash_purge_banner_fmt, expiredItems.size),
                                 style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 10.dp)
+                                modifier = Modifier.padding(start = Dimens.spaceMediumSmall + 2.dp)
                             )
                         }
                         Button(
@@ -255,7 +258,7 @@ fun TrashScreen(
                                 contentColor = MaterialTheme.colorScheme.onError
                             )
                         ) {
-                            Text("Purge Now")
+                            Text(stringResource(R.string.trash_purge_now_button))
                         }
                     }
                 }

@@ -1,4 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App & General -->
     <string name="app_name">Gallery</string>
+    <string name="nav_photos">Photos</string>
+    <string name="nav_albums">Albums</string>
+    <string name="nav_trash">Trash</string>
+    <string name="nav_settings">Settings</string>
+    <string name="action_back">Back</string>
+    <string name="action_close">Close</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_manage">Manage</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="action_confirm">Confirm</string>
+
+    <!-- Gallery & Media Grid -->
+    <string name="gallery_title">Gallery</string>
+    <string name="gallery_search_desc">Search gallery</string>
+    <string name="gallery_view_options_desc">View options</string>
+    <string name="gallery_exit_selection_desc">Exit selection mode</string>
+    <string name="gallery_delete_selected_desc">Delete selected items</string>
+    <string name="gallery_selected_count_fmt">%1$d selected</string>
+    <string name="gallery_filter_today">Today</string>
+    <string name="gallery_filter_yesterday">Yesterday</string>
+    <string name="gallery_filter_videos">Videos</string>
+    <string name="gallery_filter_favorites">Favorites</string>
+    <string name="gallery_load_more_failed">Failed to load more items</string>
+
+    <!-- Albums -->
+    <string name="albums_title">Albums</string>
+    <string name="albums_item_count_fmt">%1$d items</string>
+
+    <!-- Trash -->
+    <string name="trash_title">Trash</string>
+    <string name="trash_empty_button">Empty Trash</string>
+    <string name="trash_restore_selected_desc">Restore selected</string>
+    <string name="trash_delete_permanently_desc">Delete permanently</string>
+    <string name="trash_delete_dialog_title">Delete Permanently?</string>
+    <string name="trash_delete_dialog_text">Selected item(s) will be permanently deleted from your device. This action cannot be undone.</string>
+    <string name="trash_delete_dialog_confirm">Delete Forever</string>
+    <string name="trash_empty_dialog_title">Empty Trash?</string>
+    <string name="trash_empty_dialog_text">All items in Trash will be permanently deleted from your device. This action cannot be undone.</string>
+    <string name="trash_purge_banner_fmt">%1$d item(s) in Trash are older than 30 days.</string>
+    <string name="trash_purge_now_button">Purge Now</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_pairing">DASHBOARD PAIRING</string>
+    <string name="settings_section_sync">REMOTE ACCESS &amp; SYNC</string>
+    <string name="settings_section_server">SERVER CONFIGURATION</string>
+    <string name="settings_section_about">ABOUT</string>
+    <string name="settings_connection_status">Connection Status</string>
+    <string name="settings_device_id_fmt">ID: %1$s</string>
+    <string name="settings_status_paired">Paired</string>
+    <string name="settings_status_not_paired">Not Paired</string>
+    <string name="settings_unpair_button">Unpair Device</string>
+    <string name="settings_pairing_prompt">Connect this phone to your desktop dashboard to enable remote backup, streaming, and commands.</string>
+    <string name="settings_pair_device_button">Pair This Device</string>
+    <string name="settings_remote_access_title">Remote Access Service</string>
+    <string name="settings_remote_access_desc">Run persistent WebSocket background service to receive commands from paired dashboard.</string>
+    <string name="settings_server_host_title">Backend Server Host</string>
+    <string name="settings_server_host_desc">Configure LAN URL when debugging or testing on a physical phone via local Wi-Fi.</string>
+    <string name="settings_server_host_label">Server Host URL</string>
+    <string name="settings_server_host_placeholder">http://192.168.1.xxx:8080</string>
+    <string name="settings_app_version">App Version</string>
+    <string name="settings_app_version_value">2.0.0</string>
+    <string name="settings_architecture">Architecture</string>
+    <string name="settings_architecture_value">M3 Jetpack Compose</string>
+    <string name="settings_battery_dialog_title">Background Sync</string>
+    <string name="settings_battery_dialog_text">Allow Gallery to run in the background without battery restriction so remote access stays active reliably.</string>
+    <string name="settings_battery_dialog_confirm">Allow Background Running</string>
+    <string name="settings_battery_dialog_dismiss">Not Now</string>
+
+    <!-- Pairing -->
+    <string name="pairing_title">Pair Device</string>
+    <string name="pairing_header_title">Enter Dashboard Code</string>
+    <string name="pairing_header_desc">Enter the 6-digit code displayed on your dashboard to securely pair this phone.</string>
+    <string name="pairing_code_label">6-Digit Pairing Code</string>
+    <string name="pairing_code_placeholder">123456</string>
+    <string name="pairing_device_name_label">Device Name (Optional)</string>
+    <string name="pairing_server_host_label">Backend Server Host</string>
+    <string name="pairing_connect_button">Connect Device</string>
+    <string name="pairing_err_invalid_code">Please enter a valid 6-digit numeric code.</string>
+    <string name="pairing_err_code_expired">The pairing code is invalid or has expired. Please generate a new code on your dashboard and try again.</string>
+    <string name="pairing_err_rate_limited">Too many pairing attempts (HTTP 429). Please wait a moment before trying again.</string>
+    <string name="pairing_err_server_fmt">Server error (HTTP %1$d): %2$s</string>
+    <string name="pairing_err_emulator_tip">Cannot connect to 10.0.2.2 on a physical phone.\n\nTip: 10.0.2.2 only works in Android Emulators. When testing on a real phone over Wi-Fi, change the Server Host field above to your PC\'s Wi-Fi IP address (e.g. http://10.84.187.xxx:8080 or http://192.168.1.xxx:8080).</string>
+    <string name="pairing_err_network_fmt">Network error: Could not connect to %1$s (%2$s).</string>
+
+    <!-- Permissions -->
+    <string name="perm_title">Access Your Photos &amp; Videos</string>
+    <string name="perm_desc">Gallery needs access to your media files to display your photos, albums, and videos. Your media stays securely on your device.</string>
+    <string name="perm_grant_button">Grant Access</string>
+    <string name="perm_denied_title">Storage Permission Required</string>
+    <string name="perm_denied_desc">Access to your photos and videos has been disabled in system settings. To view your gallery, please enable media permission.</string>
+    <string name="perm_open_settings_button">Open System Settings</string>
+    <string name="perm_partial_access_banner">Limited photo access granted.</string>
+
+    <!-- Media Viewer -->
+    <string name="viewer_page_fmt">%1$d of %2$d</string>
+    <string name="viewer_share_desc">Share</string>
+    <string name="viewer_info_desc">Info</string>
+    <string name="viewer_details_title">Details</string>
+    <string name="viewer_details_name">Name</string>
+    <string name="viewer_details_type">Type</string>
+    <string name="viewer_details_added">Added</string>
+    <string name="viewer_details_duration">Duration</string>
+    <string name="viewer_unknown">Unknown</string>
+    <string name="viewer_share_chooser_title">Share Media</string>
+
+    <!-- Empty States & Errors -->
+    <string name="empty_media_title">No photos or videos</string>
+    <string name="empty_media_desc">Your captured moments will appear here</string>
+    <string name="empty_albums_title">No albums found</string>
+    <string name="empty_albums_desc">Albums are organized automatically from your media folders</string>
+    <string name="empty_trash_title">Trash is empty</string>
+    <string name="empty_trash_desc">Deleted items will appear here for 30 days before permanent removal</string>
+    <string name="error_default_title">Something went wrong</string>
+    <string name="error_load_media_failed">Failed to load media items</string>
+    <string name="error_check_permissions">Check permissions or storage access</string>
+
+    <!-- Pending Remote Requests -->
+    <string name="remote_delete_title">Remote Delete Requested</string>
+    <string name="remote_delete_text_fmt">Dashboard requested to delete %1$d photo(s). Move to Trash?</string>
+    <string name="remote_delete_confirm">Confirm Move to Trash</string>
+    <string name="remote_rename_title">Remote Rename Requested</string>
+    <string name="remote_rename_text_fmt">Dashboard requested to rename photo ID %1$d to \'%2$s\'. Confirm?</string>
+    <string name="remote_rename_confirm">Confirm Rename</string>
+
+    <!-- Notifications -->
+    <string name="notif_sync_title">Gallery Sync Active</string>
+    <string name="notif_sync_text">Connected to background sync server</string>
+    <string name="notif_sync_disconnect">Disconnect</string>
+    <string name="notif_transparency_download_title">Media File Downloaded</string>
+    <string name="notif_transparency_download_text_fmt">Dashboard downloaded %1$s</string>
+    <string name="notif_transparency_thumb_title">Thumbnail Transferred</string>
+    <string name="notif_transparency_thumb_text_fmt">Dashboard requested thumbnail for item %1$d</string>
+    <string name="notif_transparency_list_title">Dashboard Browsed Photos</string>
+    <string name="notif_transparency_list_text_fmt">Dashboard requested photo list (%1$d items)</string>
+    <string name="notif_confirm_delete_title">Remote Delete Requested</string>
+    <string name="notif_confirm_delete_text_fmt">Dashboard requested to delete %1$d photo(s). Tap to confirm.</string>
+    <string name="notif_confirm_rename_title">Remote Rename Requested</string>
+    <string name="notif_confirm_rename_text_fmt">Dashboard requested to rename photo to \'%1$s\'. Tap to confirm.</string>
+    <string name="notif_autopurge_title">Trash Auto-Purge</string>
+    <string name="notif_autopurge_text_fmt">%1$d item(s) in Trash are older than 30 days. Tap to confirm permanent deletion.</string>
+    <string name="notif_autopurge_big_text_fmt">%1$d item(s) in Trash have exceeded the retention limit and are ready for permanent deletion. Tap to open Gallery and confirm.</string>
 </resources>

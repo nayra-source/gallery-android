@@ -1,6 +1,8 @@
 package com.aryan.gallery.service.handlers
 
 import android.content.Context
+import com.aryan.gallery.config.MediaConfig
+import com.aryan.gallery.config.NetworkConfig
 import com.aryan.gallery.data.media.MediaStoreDataSource
 import com.aryan.gallery.data.remote.TransferApi
 import com.aryan.gallery.service.DeviceCommandEnvelope
@@ -22,7 +24,7 @@ class HandlersByIdTest {
     fun `GetThumbnailHandler returns error envelope when mediaId is not found`() = runTest {
         whenever(dataSource.getMediaItemById(999L)).thenReturn(null)
 
-        val handler = GetThumbnailHandler(context, dataSource, transferApi, json)
+        val handler = GetThumbnailHandler(context, dataSource, transferApi, MediaConfig(), json)
         val command = DeviceCommandEnvelope("cmd-1", "GET_THUMBNAIL", """{"mediaId":999}""")
         val result = handler.handleCommand(command)
 
@@ -34,7 +36,7 @@ class HandlersByIdTest {
     fun `GetFullMediaHandler returns error envelope when mediaId is not found`() = runTest {
         whenever(dataSource.getMediaItemById(999L)).thenReturn(null)
 
-        val handler = GetFullMediaHandler(context, dataSource, transferApi, json)
+        val handler = GetFullMediaHandler(context, dataSource, transferApi, NetworkConfig(), json)
         val command = DeviceCommandEnvelope("cmd-2", "GET_FULL_MEDIA", """{"mediaId":999,"transferId":"t1"}""")
         val result = handler.handleCommand(command)
 

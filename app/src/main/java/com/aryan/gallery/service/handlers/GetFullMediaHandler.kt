@@ -3,6 +3,7 @@ package com.aryan.gallery.service.handlers
 import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
+import com.aryan.gallery.config.NetworkConfig
 import com.aryan.gallery.data.media.MediaStoreDataSource
 import com.aryan.gallery.data.remote.InputStreamRequestBody
 import com.aryan.gallery.data.remote.TransferApi
@@ -39,6 +40,7 @@ class GetFullMediaHandler @Inject constructor(
     @ApplicationContext private val context: Context,
     private val dataSource: MediaStoreDataSource,
     private val transferApi: TransferApi,
+    private val networkConfig: NetworkConfig,
     private val json: Json
 ) : CommandHandler {
 
@@ -66,7 +68,8 @@ class GetFullMediaHandler @Inject constructor(
             val streamingBody = InputStreamRequestBody(
                 contentType = mimeType.toMediaTypeOrNull(),
                 contentResolver = context.contentResolver,
-                uri = uri
+                uri = uri,
+                bufferSize = networkConfig.streamBufferSize
             )
 
             val multipartPart = MultipartBody.Part.createFormData("file", fileName, streamingBody)

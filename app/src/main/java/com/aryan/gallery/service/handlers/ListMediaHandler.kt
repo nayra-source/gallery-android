@@ -1,6 +1,7 @@
 package com.aryan.gallery.service.handlers
 
 import android.content.Context
+import com.aryan.gallery.config.MediaConfig
 import com.aryan.gallery.data.media.MediaStoreDataSource
 import com.aryan.gallery.service.DeviceCommandEnvelope
 import com.aryan.gallery.service.DeviceCommandResultEnvelope
@@ -43,6 +44,7 @@ data class ListMediaResultDto(
 class ListMediaHandler @Inject constructor(
     @ApplicationContext private val context: Context,
     private val dataSource: MediaStoreDataSource,
+    private val mediaConfig: MediaConfig,
     private val json: Json
 ) : CommandHandler {
 
@@ -54,7 +56,7 @@ class ListMediaHandler @Inject constructor(
                 try { json.decodeFromString<ListMediaPayload>(it) } catch (e: Exception) { null }
             }
 
-            val pageLimit = 50
+            val pageLimit = mediaConfig.listPageSize
             val currentOffset = payload?.cursor?.toIntOrNull()?.coerceAtLeast(0) ?: 0
             val albumBucketId = payload?.album
 

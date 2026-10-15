@@ -22,6 +22,9 @@ import org.mockito.kotlin.whenever
 
 import com.aryan.gallery.data.local.RemoteAccessPreferences
 
+import com.aryan.gallery.config.UrlNormalizer
+import com.aryan.gallery.config.WebSocketConfig
+
 class WebSocketClientTest {
 
     private val context: Context = mock()
@@ -46,7 +49,9 @@ class WebSocketClientTest {
         whenever(remoteAccessPreferences.serverBaseUrl).thenReturn("http://10.0.2.2:8080")
         whenever(okHttpClient.newWebSocket(any(), any())).thenReturn(mockWebSocket)
 
-        client = WebSocketClient(context, okHttpClient, tokenStore, remoteAccessPreferences, authEventBus, commandDispatcher, json)
+        val wsConfig = WebSocketConfig()
+        val urlNormalizer = UrlNormalizer(wsConfig)
+        client = WebSocketClient(context, okHttpClient, tokenStore, remoteAccessPreferences, authEventBus, commandDispatcher, wsConfig, urlNormalizer, json)
     }
 
     @After

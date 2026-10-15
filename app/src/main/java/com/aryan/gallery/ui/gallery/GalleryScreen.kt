@@ -42,18 +42,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.aryan.gallery.R
 import com.aryan.gallery.data.media.MediaItem
+import com.aryan.gallery.ui.theme.Dimens
 
 /**
  * Main Gallery Screen displaying a paged grid of photos and videos.
  * Features:
  * - Material 3 TopAppBar titled 'Gallery' with search and grid view actions
- * - Horizontal filter chips row ('Today', 'Yesterday', 'May 2026', 'Videos', 'Favorites')
+ * - Horizontal filter chips row ('Today', 'Yesterday', 'Videos', 'Favorites')
  * - Animated TopAppBar transition into multi-selection mode
  * - Lifecycle-aware state observation and clean edge-to-edge layout.
  */
@@ -67,8 +70,15 @@ fun GalleryScreen(
     val selectionState = viewModel.selectionState
     val pendingIntentSender by viewModel.pendingIntentSender.collectAsStateWithLifecycle()
 
-    var selectedFilterChip by remember { mutableStateOf("Today") }
-    val filterChips = remember { listOf("Today", "Yesterday", "May 2026", "Videos", "Favorites") }
+    val todayStr = stringResource(R.string.gallery_filter_today)
+    val yesterdayStr = stringResource(R.string.gallery_filter_yesterday)
+    val videosStr = stringResource(R.string.gallery_filter_videos)
+    val favoritesStr = stringResource(R.string.gallery_filter_favorites)
+
+    var selectedFilterChip by remember { mutableStateOf(todayStr) }
+    val filterChips = remember(todayStr, yesterdayStr, videosStr, favoritesStr) {
+        listOf(todayStr, yesterdayStr, videosStr, favoritesStr)
+    }
 
     val intentSenderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
@@ -99,7 +109,7 @@ fun GalleryScreen(
                     TopAppBar(
                         title = {
                             Text(
-                                text = "${selectionState.selectedIds.size} selected",
+                                text = stringResource(R.string.gallery_selected_count_fmt, selectionState.selectedIds.size),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -108,7 +118,7 @@ fun GalleryScreen(
                             IconButton(onClick = { selectionState.clearSelection() }) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Exit selection mode",
+                                    contentDescription = stringResource(R.string.gallery_exit_selection_desc),
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
@@ -128,7 +138,7 @@ fun GalleryScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Delete,
-                                    contentDescription = "Delete selected items",
+                                    contentDescription = stringResource(R.string.gallery_delete_selected_desc),
                                     tint = MaterialTheme.colorScheme.error
                                 )
                             }
@@ -141,7 +151,7 @@ fun GalleryScreen(
                     TopAppBar(
                         title = {
                             Text(
-                                text = "Gallery",
+                                text = stringResource(R.string.gallery_title),
                                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onBackground
                             )
@@ -150,14 +160,14 @@ fun GalleryScreen(
                             IconButton(onClick = { /* Search action */ }) {
                                 Icon(
                                     imageVector = Icons.Outlined.Search,
-                                    contentDescription = "Search gallery",
+                                    contentDescription = stringResource(R.string.gallery_search_desc),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             IconButton(onClick = { /* Grid view options */ }) {
                                 Icon(
                                     imageVector = Icons.Outlined.GridView,
-                                    contentDescription = "View options",
+                                    contentDescription = stringResource(R.string.gallery_view_options_desc),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -175,13 +185,13 @@ fun GalleryScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Horizontal Filter Chips Row (matching mockup picture)
+            // Horizontal Filter Chips Row
             if (!selectionState.isSelectionMode) {
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(horizontal = Dimens.spaceLarge, vertical = Dimens.spaceSmall + 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.spaceMediumSmall)
                 ) {
                     items(filterChips) { chip ->
                         val isSelected = selectedFilterChip == chip
@@ -195,7 +205,7 @@ fun GalleryScreen(
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                                 )
                             },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(Dimens.cornerLarge),
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                 selectedLabelColor = MaterialTheme.colorScheme.primary,

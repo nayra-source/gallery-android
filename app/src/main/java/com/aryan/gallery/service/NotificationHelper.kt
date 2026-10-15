@@ -1,53 +1,70 @@
 package com.aryan.gallery.service
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.aryan.gallery.MainActivity
-
-private const val TRANSPARENCY_CHANNEL_ID = "remote_activity_channel"
-private const val CONFIRMATION_CHANNEL_ID = "remote_confirmation_channel"
-private const val TRANSPARENCY_NOTIFICATION_ID = 3001
-private const val CONFIRMATION_NOTIFICATION_ID = 3002
+import com.aryan.gallery.config.NotificationConfig
 
 object NotificationHelper {
 
-    fun showTransparencyNotification(context: Context, title: String, text: String) {
+    fun showTransparencyNotification(
+        context: Context,
+        title: String,
+        text: String,
+        config: NotificationConfig = NotificationConfig()
+    ) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val channel = NotificationChannel(
-            TRANSPARENCY_CHANNEL_ID,
-            "Remote Dashboard Activity",
+            config.transparencyChannelId,
+            config.transparencyChannelName,
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Informs device owner when dashboard remotely accesses photos or performs commands"
+            description = config.transparencyChannelDescription
         }
         notificationManager.createNotificationChannel(channel)
 
-        val notification = NotificationCompat.Builder(context, TRANSPARENCY_CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, config.transparencyChannelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(text)
             .setAutoCancel(true)
             .build()
 
-        notificationManager.notify(TRANSPARENCY_NOTIFICATION_ID, notification)
+        notificationManager.notify(config.transparencyNotificationId, notification)
     }
 
-    fun showConfirmationNotification(context: Context, title: String, text: String) {
+    fun showConfirmationNotification(
+        context: Context,
+        title: String,
+        text: String,
+        config: NotificationConfig = NotificationConfig()
+    ) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val channel = NotificationChannel(
-            CONFIRMATION_CHANNEL_ID,
-            "Remote Action Confirmations",
+            config.confirmationChannelId,
+            config.confirmationChannelName,
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Prompts device owner to confirm remote delete or rename operations"
+            description = config.confirmationChannelDescription
         }
         notificationManager.createNotificationChannel(channel)
 
@@ -62,7 +79,7 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, CONFIRMATION_CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, config.confirmationChannelId)
             .setSmallIcon(android.R.drawable.ic_menu_delete)
             .setContentTitle(title)
             .setContentText(text)
@@ -71,6 +88,6 @@ object NotificationHelper {
             .setAutoCancel(true)
             .build()
 
-        notificationManager.notify(CONFIRMATION_NOTIFICATION_ID, notification)
+        notificationManager.notify(config.confirmationNotificationId, notification)
     }
 }

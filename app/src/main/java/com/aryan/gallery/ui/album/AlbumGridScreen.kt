@@ -44,14 +44,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.aryan.gallery.R
 import com.aryan.gallery.data.media.Album
 import com.aryan.gallery.ui.components.EmptyStates
+import com.aryan.gallery.ui.theme.Dimens
 
 /**
  * Screen displaying a responsive grid of media albums (buckets) with cover thumbnails,
@@ -70,7 +73,7 @@ fun AlbumGridScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Albums",
+                        text = stringResource(R.string.albums_title),
                         style = MaterialTheme.typography.headlineSmall
                     )
                 },
@@ -89,11 +92,11 @@ fun AlbumGridScreen(
                 EmptyStates.Albums()
             } else {
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 150.dp),
+                    columns = GridCells.Adaptive(minSize = Dimens.albumGridTileMinSize),
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    contentPadding = PaddingValues(Dimens.spaceMedium),
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.spaceMedium),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.spaceLarge)
                 ) {
                     items(albums, key = { it.bucketId }) { album ->
                         AlbumGridTile(
@@ -208,7 +211,7 @@ private fun AlbumGridTile(
                         )
                         Spacer(modifier = Modifier.size(3.dp))
                         Text(
-                            text = "${album.itemCount} items",
+                            text = stringResource(R.string.albums_item_count_fmt, album.itemCount),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

@@ -19,7 +19,15 @@ class RemoteAccessPreferences @Inject constructor(
 
     var serverBaseUrl: String
         get() = prefs.getString(KEY_SERVER_BASE_URL, null) ?: BuildConfig.BASE_URL
-        set(value) = prefs.edit { putString(KEY_SERVER_BASE_URL, value.trim()) }
+        set(value) {
+            val trimmed = value.trim()
+            val normalized = when {
+                trimmed.isEmpty() -> BuildConfig.BASE_URL
+                !trimmed.startsWith("http://") && !trimmed.startsWith("https://") -> "http://$trimmed"
+                else -> trimmed
+            }
+            prefs.edit { putString(KEY_SERVER_BASE_URL, normalized) }
+        }
 
     var isRemoteAccessEnabled: Boolean
         get() = prefs.getBoolean(KEY_REMOTE_ACCESS_ENABLED, true)

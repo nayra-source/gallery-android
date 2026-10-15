@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -24,16 +26,24 @@ android {
     // --- Dev / staging / prod environment flavors ---
     // Picked at build time (e.g. devDebug, prodRelease), each pointing BuildConfig.BASE_URL
     // and BuildConfig.WS_URL at a different backend. See CONFIG_STRATEGY.md in the backend repo.
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { stream ->
+            localProperties.load(stream)
+        }
+    }
+    val devBaseUrl = localProperties.getProperty("DEV_BASE_URL") ?: System.getenv("DEV_BASE_URL") ?: "http://10.0.2.2:8080"
+    val devWsUrl = localProperties.getProperty("DEV_WS_URL") ?: System.getenv("DEV_WS_URL") ?: "ws://10.0.2.2:8080/ws/device"
+
     flavorDimensions += "environment"
     productFlavors {
         create("dev") {
             dimension = "environment"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-            // 10.0.2.2 = Android emulator's alias for the host machine's localhost.
-            // Swap for your machine's LAN IP when testing on a physical device over Wi-Fi.
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080\"")
-            buildConfigField("String", "WS_URL", "\"ws://10.0.2.2:8080/ws/device\"")
+            buildConfigField("String", "BASE_URL", "\"$devBaseUrl\"")
+            buildConfigField("String", "WS_URL", "\"$devWsUrl\"")
         }
         create("staging") {
             dimension = "environment"
@@ -73,8 +83,6 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
-        @Suppress("DEPRECATION")
-        freeCompilerArgs += listOf("-Xannotation-default-target=param-property")
     }
 
     packaging {

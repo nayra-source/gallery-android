@@ -13,15 +13,14 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.aryan.gallery.MainActivity
+import com.aryan.gallery.config.NotificationConfig
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
 const val ACTION_CONFIRM_PURGE = "com.aryan.gallery.action.CONFIRM_PURGE"
-private const val CHANNEL_ID = "auto_purge_channel"
-private const val NOTIFICATION_ID = 1001
 
 /**
- * Worker that periodically checks for trashed items older than 30 days.
+ * Worker that periodically checks for trashed items older than retention threshold.
  *
  * Android OS Design Constraint Note:
  * MediaStore.createDeleteRequest requires user confirmation via a system intent sender dialog,
@@ -32,7 +31,8 @@ private const val NOTIFICATION_ID = 1001
 class AutoPurgeWorker @AssistedInject constructor(
     @Assisted private val context: Context,
     @Assisted params: WorkerParameters,
-    private val trashRepository: TrashRepository
+    private val trashRepository: TrashRepository,
+    private val notificationConfig: NotificationConfig
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -59,11 +59,11 @@ class AutoPurgeWorker @AssistedInject constructor(
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Auto-Purge Notifications",
+            notificationConfig.autoPurgeChannelId,
+            notificationConfig.autoPurgeChannelName,
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = "Notifications for media items ready to be auto-purged from Trash"
+            description = notificationConfig.autoPurgeChannelDescription
         }
         notificationManager.createNotificationChannel(channel)
 
@@ -79,7 +79,7 @@ class AutoPurgeWorker @AssistedInject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, notificationConfig.autoPurgeChannelId)
             .setSmallIcon(android.R.drawable.ic_menu_delete)
             .setContentTitle("Trash Auto-Purge")
             .setContentText("$count item(s) in Trash are older than 30 days. Tap to confirm permanent deletion.")
@@ -91,6 +91,6 @@ class AutoPurgeWorker @AssistedInject constructor(
             .setAutoCancel(true)
             .build()
 
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        notificationManager.notify(notificationConfig.autoPurgeNotificationId, notification)
     }
 }

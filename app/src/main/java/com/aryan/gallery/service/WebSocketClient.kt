@@ -6,7 +6,9 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.util.Log
-import com.aryan.gallery.BuildConfig
+import com.aryan.gallery.config.UrlNormalizer
+import com.aryan.gallery.config.WebSocketConfig
+import com.aryan.gallery.data.local.RemoteAccessPreferences
 import com.aryan.gallery.data.local.TokenStore
 import com.aryan.gallery.data.remote.AuthEventBus
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -26,11 +28,7 @@ import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 
-import com.aryan.gallery.data.local.RemoteAccessPreferences
-
 private const val TAG = "GalleryWebSocket"
-private const val INITIAL_BACKOFF_MS = 1000L
-private const val MAX_BACKOFF_MS = 60000L
 
 /**
  * Manages the persistent WebSocket connection to gallery-backend with exponential backoff,
@@ -44,6 +42,8 @@ class WebSocketClient @Inject constructor(
     private val remoteAccessPreferences: RemoteAccessPreferences,
     private val authEventBus: AuthEventBus,
     private val commandDispatcher: CommandDispatcher,
+    private val webSocketConfig: WebSocketConfig,
+    private val urlNormalizer: UrlNormalizer,
     private val json: Json
 ) {
     private val scope = CoroutineScope(Dispatchers.IO + Job())
@@ -53,7 +53,7 @@ class WebSocketClient @Inject constructor(
     private var isConnected = false
     @Volatile
     private var isManualDisconnect = false
-    private var backoffDelayMs = INITIAL_BACKOFF_MS
+    private var backoffDelayMs = webSocketConfig.initialBackoffMs
     private var reconnectJob: Job? = null
 
     private val connectivityManager =
@@ -63,7 +63,7 @@ class WebSocketClient @Inject constructor(
         override fun onAvailable(network: Network) {
             Log.d(TAG, "Network became available. Resetting backoff and reconnecting if needed.")
             if (!isConnected && !isManualDisconnect && tokenStore.isPaired()) {
-                backoffDelayMs = INITIAL_BACKOFF_MS
+                backoffDelayMs = webSocketConfig.initialBackoffMs
                 reconnectJob?.cancel()
                 connect()
             }
@@ -96,10 +96,8 @@ class WebSocketClient @Inject constructor(
             return
         }
 
-        val baseUrl = remoteAccessPreferences.serverBaseUrl
-        val wsScheme = if (baseUrl.startsWith("https")) "wss" else "ws"
-        val cleanHost = baseUrl.removePrefix("http://").removePrefix("https://").removeSuffix("/")
-        val wsUrl = "$wsScheme://$cleanHost/ws/device?token=$token"
+        val rawBaseUrl = remoteAccessPreferences.serverBaseUrl
+        val wsUrl = urlNormalizer.toWebSocketUrl(rawBaseUrl, token)
         val request = Request.Builder().url(wsUrl).build()
 
         val safeLogUrl = wsUrl.substringBefore("?")
@@ -121,11 +119,11 @@ class WebSocketClient @Inject constructor(
         override fun onOpen(webSocket: WebSocket, response: Response) {
             Log.d(TAG, "WebSocket connected successfully.")
             isConnected = true
-            backoffDelayMs = INITIAL_BACKOFF_MS
+            backoffDelayMs = webSocketConfig.initialBackoffMs
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
-            Log.d(TAG, "Received raw WebSocket frame: $text")
+            Log.d(TAG, "Received WebSocket command message")
             scope.launch {
                 try {
                     val command = json.decodeFromString<DeviceCommandEnvelope>(text)
@@ -192,7 +190,7 @@ class WebSocketClient @Inject constructor(
         reconnectJob = scope.launch {
             Log.d(TAG, "Scheduling WebSocket reconnect in ${backoffDelayMs}ms...")
             delay(backoffDelayMs)
-            backoffDelayMs = (backoffDelayMs * 2).coerceAtMost(MAX_BACKOFF_MS)
+            backoffDelayMs = (backoffDelayMs * webSocketConfig.backoffMultiplier.toLong()).coerceAtMost(webSocketConfig.maxBackoffMs)
             connect()
         }
     }

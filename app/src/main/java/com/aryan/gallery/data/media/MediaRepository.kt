@@ -3,6 +3,7 @@ package com.aryan.gallery.data.media
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.aryan.gallery.config.MediaConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -10,7 +11,8 @@ import javax.inject.Singleton
 
 @Singleton
 class MediaRepository @Inject constructor(
-    private val dataSource: MediaStoreDataSource
+    private val dataSource: MediaStoreDataSource,
+    private val mediaConfig: MediaConfig
 ) {
 
     /**
@@ -21,8 +23,8 @@ class MediaRepository @Inject constructor(
     fun getMediaPaged(bucketId: String? = null): Flow<PagingData<MediaItem>> {
         return Pager(
             config = PagingConfig(
-                pageSize = 60,
-                prefetchDistance = 20,
+                pageSize = mediaConfig.pagingPageSize,
+                prefetchDistance = mediaConfig.pagingPrefetchDistance,
                 enablePlaceholders = false
             )
         ) {

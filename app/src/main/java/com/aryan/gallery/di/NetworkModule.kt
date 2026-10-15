@@ -1,6 +1,7 @@
 package com.aryan.gallery.di
 
 import com.aryan.gallery.BuildConfig
+import com.aryan.gallery.config.NetworkConfig
 import com.aryan.gallery.data.local.TokenStore
 import com.aryan.gallery.data.remote.AuthEventBus
 import com.aryan.gallery.data.remote.PairingApi
@@ -39,7 +40,8 @@ object NetworkModule {
     fun provideOkHttpClient(
         tokenStore: TokenStore,
         authEventBus: AuthEventBus,
-        hostSelectionInterceptor: HostSelectionInterceptor
+        hostSelectionInterceptor: HostSelectionInterceptor,
+        networkConfig: NetworkConfig
     ): OkHttpClient {
         val authInterceptor = okhttp3.Interceptor { chain ->
             val original = chain.request()
@@ -68,6 +70,9 @@ object NetworkModule {
         }
 
         return OkHttpClient.Builder()
+            .connectTimeout(networkConfig.connectTimeoutSeconds, TimeUnit.SECONDS)
+            .readTimeout(networkConfig.readTimeoutSeconds, TimeUnit.SECONDS)
+            .writeTimeout(networkConfig.writeTimeoutSeconds, TimeUnit.SECONDS)
             .addInterceptor(hostSelectionInterceptor)
             .addInterceptor(authInterceptor)
             .addInterceptor(unauthInterceptor)
@@ -76,19 +81,22 @@ object NetworkModule {
     }
 
     /**
-     * Dedicated OkHttpClient instance for persistent WebSocket connection with 30s ping interval.
+     * Dedicated OkHttpClient instance for persistent WebSocket connection with configurable ping interval.
      */
     @Provides
     @Singleton
     @Named("WebSocketOkHttpClient")
-    fun provideWebSocketOkHttpClient(): OkHttpClient {
+    fun provideWebSocketOkHttpClient(networkConfig: NetworkConfig): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE
             redactHeader("Authorization")
         }
 
         return OkHttpClient.Builder()
-            .pingInterval(30, TimeUnit.SECONDS)
+            .connectTimeout(networkConfig.connectTimeoutSeconds, TimeUnit.SECONDS)
+            .readTimeout(networkConfig.readTimeoutSeconds, TimeUnit.SECONDS)
+            .writeTimeout(networkConfig.writeTimeoutSeconds, TimeUnit.SECONDS)
+            .pingInterval(networkConfig.webSocketPingIntervalSeconds, TimeUnit.SECONDS)
             .addInterceptor(logging)
             .build()
     }

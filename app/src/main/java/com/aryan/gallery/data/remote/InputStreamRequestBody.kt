@@ -13,7 +13,8 @@ import java.io.IOException
 class InputStreamRequestBody(
     private val contentType: MediaType?,
     private val contentResolver: ContentResolver,
-    private val uri: Uri
+    private val uri: Uri,
+    private val bufferSize: Int = 8192
 ) : RequestBody() {
 
     override fun contentType(): MediaType? = contentType
@@ -28,7 +29,7 @@ class InputStreamRequestBody(
 
     override fun writeTo(sink: BufferedSink) {
         contentResolver.openInputStream(uri)?.use { inputStream ->
-            val buffer = ByteArray(8192)
+            val buffer = ByteArray(bufferSize)
             var bytesRead: Int
             while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                 sink.write(buffer, 0, bytesRead)

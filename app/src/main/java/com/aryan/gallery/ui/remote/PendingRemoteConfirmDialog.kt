@@ -23,7 +23,9 @@ import com.aryan.gallery.data.media.MediaItem
 import com.aryan.gallery.data.media.MediaStoreDataSource
 import com.aryan.gallery.data.remote.PendingRemoteRequestStore
 import com.aryan.gallery.data.trash.TrashRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Top-level composable observing pending remote delete/rename requests staged by background WebSocket commands.
@@ -59,7 +61,7 @@ fun PendingRemoteConfirmDialog(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            scope.launch {
+            scope.launch(Dispatchers.IO) {
                 pendingRename?.let { renameReq ->
                     runCatching {
                         val item = dataSource.getMediaItemById(renameReq.mediaId)
@@ -88,7 +90,7 @@ fun PendingRemoteConfirmDialog(
             confirmButton = {
                 Button(
                     onClick = {
-                        scope.launch {
+                        scope.launch(Dispatchers.IO) {
                             val items = deleteReq.mediaIds.mapNotNull { id ->
                                 dataSource.getMediaItemById(id)
                             }
@@ -96,7 +98,9 @@ fun PendingRemoteConfirmDialog(
                                 pendingDeleteItems = items
                                 val uris = items.map { it.uri }
                                 val intentSender = trashRepository.createTrashRequestIntentSender(uris, trashed = true)
-                                deleteIntentSenderLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                                withContext(Dispatchers.Main) {
+                                    deleteIntentSenderLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                                }
                             } else {
                                 pendingStore.clearDelete()
                             }
@@ -124,7 +128,7 @@ fun PendingRemoteConfirmDialog(
             confirmButton = {
                 Button(
                     onClick = {
-                        scope.launch {
+                        scope.launch(Dispatchers.IO) {
                             try {
                                 val item = dataSource.getMediaItemById(renameReq.mediaId)
                                 if (item != null) {
@@ -139,7 +143,9 @@ fun PendingRemoteConfirmDialog(
                             } catch (e: Exception) {
                                 if (e is RecoverableSecurityException) {
                                     val intentSender = e.userAction.actionIntent.intentSender
-                                    renameIntentSenderLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                                    withContext(Dispatchers.Main) {
+                                        renameIntentSenderLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                                    }
                                 } else {
                                     pendingStore.clearRename()
                                 }
